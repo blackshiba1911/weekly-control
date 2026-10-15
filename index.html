@@ -8,7 +8,7 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com">
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
 
   <style>
@@ -18,7 +18,7 @@
       color: #1f2937;
     }
     
-    /* 表格邊框實線風格，還原紙本精緻感 */
+    /* 表格邊框實線風格 */
     .table-bordered {
       border: 2px solid #374151;
       border-collapse: collapse;
@@ -28,7 +28,7 @@
       border: 1px solid #4b5563;
     }
     
-    /* 移除 input number 的上下微調箭頭，保持表格整齊 */
+    /* 移除 input number 的上下微調箭頭 */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
       -webkit-appearance: none; 
@@ -38,12 +38,22 @@
       -moz-appearance: textfield;
     }
 
-    /* 列印專屬優化樣式 */
+    /* 列印專屬優化樣式：嚴格鎖定單頁 A4 */
     @media print {
-      body {
+      @page {
+        size: A4 portrait;
+        margin: 0.6cm 0.8cm; /* 緊湊邊距確保一頁容納 */
+      }
+      *, *::before, *::after {
+        box-sizing: border-box;
+      }
+      html, body {
+        height: auto !important;
         background-color: #ffffff !important;
         color: #000000 !important;
         padding: 0 !important;
+        margin: 0 !important;
+        font-size: 11px !important; /* 基準字級緊湊化 */
       }
       .no-print {
         display: none !important;
@@ -55,24 +65,61 @@
         width: 100% !important;
         padding: 0 !important;
         margin: 0 !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
       }
+      /* 表格縮小間距 */
       .table-bordered {
         border-color: #000000 !important;
+        width: 100% !important;
       }
       .table-bordered th, 
       .table-bordered td {
         border-color: #000000 !important;
+        padding-top: 1px !important;
+        padding-bottom: 1px !important;
+        padding-left: 2px !important;
+        padding-right: 2px !important;
+        font-size: 10px !important;
+        line-height: 1.15 !important;
+      }
+      .table-bordered input.t-input {
+        height: 20px !important;
+        font-size: 10px !important;
+      }
+      /* 標題與各區塊間距大幅緊湊化 */
+      .print-title {
+        font-size: 18px !important;
+        margin-bottom: 4px !important;
+      }
+      .print-section-gap {
+        margin-top: 5px !important;
+      }
+      .print-section-title {
+        font-size: 11px !important;
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+        background-color: #f3f4f6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+      .print-stat-row {
+        font-size: 10.5px !important;
+        padding: 2px 4px !important;
+      }
+      .print-record-input {
+        padding-top: 2px !important;
+        padding-bottom: 2px !important;
+        font-size: 10px !important;
+        height: 20px !important;
       }
       input, textarea {
         border-color: transparent !important;
         background: transparent !important;
+        color: #000000 !important;
       }
       .input-underlined {
         border-bottom: 1px solid #000 !important;
-      }
-      @page {
-        size: A4 portrait;
-        margin: 1.2cm 1cm;
       }
     }
   </style>
@@ -100,12 +147,12 @@
         type="button" 
         onclick="window.print()" 
         class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-lg transition-colors border border-gray-300 shadow-sm"
-        title="列印或另存為 PDF"
+        title="列印或另存為單頁 PDF"
       >
         <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
         </svg>
-        <span>列印 / 匯出 PDF</span>
+        <span>列印 (單頁A4)</span>
       </button>
 
       <button 
@@ -123,11 +170,11 @@
   </header>
 
   <!-- 主要紙本表單容器 -->
-  <main class="print-container w-full max-w-4xl bg-white p-6 sm:p-8 rounded-2xl shadow-md border border-gray-200 transition-all">
+  <main class="print-container w-full max-w-4xl bg-white p-5 sm:p-7 rounded-2xl shadow-md border border-gray-200 transition-all">
     
     <!-- 大標題 -->
-    <div class="text-center mb-4">
-      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wider text-gray-900">20 / 100 分 表</h2>
+    <div class="text-center mb-2 sm:mb-3 print-title">
+      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wider text-gray-900 print:text-xl">20 / 100 分 表</h2>
     </div>
 
     <!-- 頂部工作量統計大表格 -->
@@ -136,84 +183,84 @@
         <thead>
           <!-- 橫向第一列：日期區間、各天星期、總分 -->
           <tr class="bg-gray-50 text-gray-900 font-bold">
-            <th class="p-1 sm:p-2 w-36 sm:w-44 text-center">
+            <th class="p-1 sm:p-1.5 w-36 sm:w-44 text-center">
               <div class="flex items-center justify-center space-x-1">
-                <input type="text" id="date_start" placeholder="  /  " class="w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs sm:text-sm" oninput="saveData()">
+                <input type="text" id="date_start" placeholder="  /  " class="w-12 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="saveData()">
                 <span class="text-gray-500 font-normal">~</span>
-                <input type="text" id="date_end" placeholder="  /  " class="w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs sm:text-sm" oninput="saveData()">
+                <input type="text" id="date_end" placeholder="  /  " class="w-12 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="saveData()">
               </div>
             </th>
-            <th class="w-10 sm:w-12 py-1.5 text-center font-bold" rowspan="2">
+            <th class="w-8 sm:w-11 py-1 text-center font-bold" rowspan="2">
               分<br>數
             </th>
-            <th colspan="2" class="py-1">星期一</th>
-            <th colspan="2" class="py-1">星期二</th>
-            <th colspan="2" class="py-1">星期三</th>
-            <th colspan="2" class="py-1">星期四</th>
-            <th colspan="2" class="py-1">星期五</th>
-            <th colspan="2" class="py-1">星期六</th>
-            <th colspan="2" class="py-1">星期日</th>
-            <th class="w-12 sm:w-16 py-1.5 font-bold" rowspan="2">
+            <th colspan="2" class="py-0.5">星期一</th>
+            <th colspan="2" class="py-0.5">星期二</th>
+            <th colspan="2" class="py-0.5">星期三</th>
+            <th colspan="2" class="py-0.5">星期四</th>
+            <th colspan="2" class="py-0.5">星期五</th>
+            <th colspan="2" class="py-0.5">星期六</th>
+            <th colspan="2" class="py-0.5">星期日</th>
+            <th class="w-11 sm:w-14 py-1 font-bold" rowspan="2">
               總分
             </th>
           </tr>
           <!-- 橫向第二列：工作量統計字樣、各天的 T 與 P -->
           <tr class="bg-gray-50 text-gray-800 font-bold">
-            <th class="py-1 px-2 font-semibold">工作量統計</th>
+            <th class="py-0.5 px-1 font-semibold">工作量統計</th>
             <!-- Mon -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Tue -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Wed -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Thu -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Fri -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Sat -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Sun -->
-            <th class="w-7 sm:w-9 py-1 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-9 py-1 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
           </tr>
         </thead>
         <tbody id="score-table-body" class="divide-y divide-gray-300">
-          <!-- 6 個工作量項目由 JS 動態生成以保持代碼優雅與嚴謹計算繫結 -->
+          <!-- 6 個工作量項目由 JS 動態生成 -->
         </tbody>
         <tfoot>
           <!-- 總分列 -->
-          <tr class="bg-gray-100/90 font-bold text-gray-900">
-            <td class="py-2 px-2 text-center font-bold tracking-wider">總 分</td>
+          <tr class="bg-gray-100 font-bold text-gray-900">
+            <td class="py-1 px-1 text-center font-bold tracking-wider">總 分</td>
             <td class="bg-gray-200/50 text-gray-400">-</td>
             <!-- Mon -->
-            <td id="col_t_0" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_0" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_0" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_0" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Tue -->
-            <td id="col_t_1" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_1" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_1" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_1" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Wed -->
-            <td id="col_t_2" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_2" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_2" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_2" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Thu -->
-            <td id="col_t_3" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_3" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_3" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_3" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Fri -->
-            <td id="col_t_4" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_4" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_4" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_4" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Sat -->
-            <td id="col_t_5" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_5" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_5" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_5" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Sun -->
-            <td id="col_t_6" class="py-1 text-gray-500 font-normal text-xs">-</td>
-            <td id="col_p_6" class="py-1 text-blue-700 font-bold bg-blue-50/40">0</td>
+            <td id="col_t_6" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_p_6" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- 最終全週總分 -->
-            <td id="grand_total" class="py-1 text-sm sm:text-base font-extrabold text-blue-800 bg-blue-100/70">
+            <td id="grand_total" class="py-0.5 text-xs sm:text-sm font-extrabold text-blue-800 bg-blue-100/70">
               0
             </td>
           </tr>
@@ -222,105 +269,105 @@
     </div>
 
     <!-- 中段：週成果統計 -->
-    <div class="mt-4 border-2 border-gray-700">
-      <div class="py-1.5 text-center font-bold tracking-widest text-sm sm:text-base border-b border-gray-700 bg-gray-50">
+    <div class="mt-2.5 sm:mt-3 print-section-gap border-2 border-gray-700">
+      <div class="py-1 text-center font-bold tracking-widest text-xs sm:text-sm border-b border-gray-700 bg-gray-50 print-section-title">
         週 成 果 統 計
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 border-b border-gray-700 text-xs sm:text-sm">
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+      <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 border-b border-gray-700 text-xs">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">新增新名單</span>
-          <input type="text" id="stat_new_leads" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_new_leads" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>位</span>
         </div>
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">建議書</span>
-          <input type="text" id="stat_proposals" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_proposals" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>份</span>
         </div>
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">簽約量</span>
-          <input type="text" id="stat_contracts" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_contracts" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>份</span>
         </div>
       </div>
-      <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 text-xs sm:text-sm">
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+      <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 text-xs">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">課程活動新人</span>
-          <input type="text" id="stat_activity_new" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_activity_new" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>人</span>
         </div>
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">面談量</span>
-          <input type="text" id="stat_interviews" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_interviews" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>次</span>
         </div>
-        <div class="p-2 sm:p-2.5 flex items-center justify-center space-x-1">
+        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
           <span class="font-medium whitespace-nowrap">報聘量</span>
-          <input type="text" id="stat_recruits" class="w-16 sm:w-20 text-center border-b-2 border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5" oninput="saveData()">
+          <input type="text" id="stat_recruits" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
           <span>人</span>
         </div>
       </div>
     </div>
 
-    <!-- 下段：四大紀錄欄位 (以標準線條格呈現) -->
-    <div class="mt-4 border-2 border-gray-700 divide-y-2 divide-gray-700">
+    <!-- 下段：四大紀錄欄位 -->
+    <div class="mt-2.5 sm:mt-3 print-section-gap border-2 border-gray-700 divide-y-2 divide-gray-700">
       
       <!-- 區塊 1：本週建議書量紀錄 -->
       <div>
-        <div class="py-1.5 text-center font-bold tracking-widest text-xs sm:text-sm bg-gray-50 border-b border-gray-700">
+        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 建 議 書 量 紀 錄
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_proposal_1" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_proposal_2" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_proposal_3" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
+          <input type="text" id="record_proposal_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_proposal_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_proposal_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 2：本週開發紀錄 -->
       <div>
-        <div class="py-1.5 text-center font-bold tracking-widest text-xs sm:text-sm bg-gray-50 border-b border-gray-700">
+        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 開 發 紀 錄
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_dev_1" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_dev_2" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_dev_3" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
+          <input type="text" id="record_dev_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_dev_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_dev_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 3：課程活動約訪名單 -->
       <div>
-        <div class="py-1.5 text-center font-bold tracking-widest text-xs sm:text-sm bg-gray-50 border-b border-gray-700">
+        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           課 程 活 動 約 訪 名 單
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_invite_1" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_invite_2" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_invite_3" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
+          <input type="text" id="record_invite_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_invite_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_invite_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 4：本週重要待辦事項 -->
       <div>
-        <div class="py-1.5 text-center font-bold tracking-widest text-xs sm:text-sm bg-gray-50 border-b border-gray-700">
+        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 重 要 待 辦 事 項
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_todo_1" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_todo_2" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
-          <input type="text" id="record_todo_3" class="w-full px-3 py-1.5 text-xs sm:text-sm focus:bg-blue-50/20 focus:outline-none" placeholder="" oninput="saveData()">
+          <input type="text" id="record_todo_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_todo_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_todo_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
         </div>
       </div>
 
     </div>
   </main>
 
-  <footer class="mt-4 text-xs text-gray-500 no-print text-center">
-    💡 提示：在「T」格輸入次數後，系統會自動乘以權重在「P」格產生分數並加總。所有內容即時存於本地瀏覽器。
+  <footer class="mt-3 text-xs text-gray-500 no-print text-center">
+    💡 提示：在「T」格輸入次數後系統自動計算。點擊「列印」已設定自動收納於單張 A4 內。
   </footer>
 
-  <!-- 一鍵清零確認對話框 (無使用原生 alert/confirm) -->
+  <!-- 一鍵清零確認對話框 -->
   <div id="reset-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-sm w-full mx-4 p-5 shadow-2xl border border-gray-100 transform scale-95 transition-transform duration-200" id="reset-modal-box">
       <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
@@ -352,7 +399,6 @@
   </div>
 
   <script>
-    // 工作項目設定（項目名與對應分數）
     const WORK_ITEMS = [
       { name: "接觸/約訪/開發<br>保服/理賠/帶人", score: 1 },
       { name: "取得行程/會談機會", score: 2 },
@@ -362,22 +408,18 @@
       { name: "M受理/新人報聘", score: 5 }
     ];
 
-    const DAYS_COUNT = 7; // 週一至週日共7天
+    const DAYS_COUNT = 7;
     const STORAGE_KEY = "weekly_20_100_sheet_data_v1";
 
-    // 初始化動態建立表格
     function initTable() {
       const tbody = document.getElementById("score-table-body");
       let html = "";
 
       WORK_ITEMS.forEach((item, rIdx) => {
         html += `<tr class="hover:bg-gray-50/50">`;
-        // 工作項目名稱
-        html += `<td class="py-1 px-1.5 text-xs font-medium leading-snug text-left align-middle border border-gray-600">${item.name}</td>`;
-        // 單項分數
+        html += `<td class="py-1 px-1 sm:px-1.5 text-xs font-medium leading-tight text-left align-middle border border-gray-600">${item.name}</td>`;
         html += `<td class="py-1 text-center font-bold text-gray-800 border border-gray-600 bg-gray-50">${item.score}</td>`;
         
-        // 7 天 (Mon - Sun) 的 T 與 P
         for (let d = 0; d < DAYS_COUNT; d++) {
           html += `
             <td class="p-0 border border-gray-600">
@@ -388,24 +430,23 @@
                 id="t_${rIdx}_${d}" 
                 data-row="${rIdx}" 
                 data-day="${d}"
-                class="t-input w-full h-8 text-center bg-transparent focus:bg-amber-100/60 focus:outline-none text-xs sm:text-sm font-medium" 
+                class="t-input w-full h-7 sm:h-8 text-center bg-transparent focus:bg-amber-100/60 focus:outline-none text-xs sm:text-sm font-medium" 
                 oninput="onTInputChange(${rIdx}, ${d})"
               />
             </td>
             <td 
               id="p_${rIdx}_${d}" 
-              class="py-1 text-center text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50/20 border border-gray-600 select-all"
+              class="py-0.5 text-center text-xs sm:text-sm font-semibold text-blue-700 bg-blue-50/20 border border-gray-600 select-all"
             >
               -
             </td>
           `;
         }
 
-        // 該項目全週橫向加總 P
         html += `
           <td 
             id="row_total_${rIdx}" 
-            class="py-1 text-center font-bold text-xs sm:text-sm text-gray-800 bg-gray-100 border border-gray-600"
+            class="py-0.5 text-center font-bold text-xs sm:text-sm text-gray-800 bg-gray-100 border border-gray-600"
           >
             0
           </td>
@@ -416,13 +457,11 @@
       tbody.innerHTML = html;
     }
 
-    // 當 T 輸入數值時的即時連動計算
     function onTInputChange(row, day) {
       calculateAll();
       saveData();
     }
 
-    // 全表重新計算
     function calculateAll() {
       let grandTotal = 0;
       let dayTotals = Array(DAYS_COUNT).fill(0);
@@ -448,7 +487,6 @@
           }
         }
 
-        // 該行的總分
         const rowTotalCell = document.getElementById(`row_total_${rIdx}`);
         if (rowTotalCell) {
           rowTotalCell.textContent = rowSumP;
@@ -456,7 +494,6 @@
         grandTotal += rowSumP;
       });
 
-      // 各日直向加總
       for (let d = 0; d < DAYS_COUNT; d++) {
         const colP = document.getElementById(`col_p_${d}`);
         const colT = document.getElementById(`col_t_${d}`);
@@ -464,14 +501,12 @@
         if (colT) colT.textContent = dayTCounts[d] > 0 ? dayTCounts[d] : "-";
       }
 
-      // 右下角全週總分
       const grandTotalCell = document.getElementById("grand_total");
       if (grandTotalCell) {
         grandTotalCell.textContent = grandTotal;
       }
     }
 
-    // 蒐集全表輸入狀態並持久儲存至 localStorage
     function saveData() {
       const data = {
         dates: {
@@ -504,7 +539,6 @@
         lastUpdated: new Date().toLocaleTimeString("zh-TW", { hour: '2-digit', minute: '2-digit', second: '2-digit' })
       };
 
-      // 儲存 T 網格
       for (let r = 0; r < WORK_ITEMS.length; r++) {
         for (let d = 0; d < DAYS_COUNT; d++) {
           const el = document.getElementById(`t_${r}_${d}`);
@@ -525,7 +559,6 @@
       }
     }
 
-    // 載入之前已存的資料
     function loadSavedData() {
       try {
         const saved = localStorage.getItem(STORAGE_KEY);
@@ -580,11 +613,10 @@
           if (statusEl) statusEl.textContent = `已載入先前記綠 (${data.lastUpdated})`;
         }
       } catch (e) {
-        console.error("載入本機紀錄失敗：", e);
+        console.error("載入失敗：", e);
       }
     }
 
-    // Modal 控制
     function openResetModal() {
       const modal = document.getElementById("reset-modal");
       const box = document.getElementById("reset-modal-box");
@@ -601,11 +633,9 @@
       box.classList.add("scale-95");
     }
 
-    // 確定一鍵清空
     function confirmResetAll() {
       closeResetModal();
 
-      // 清除表格中所有 T
       for (let r = 0; r < WORK_ITEMS.length; r++) {
         for (let d = 0; d < DAYS_COUNT; d++) {
           const el = document.getElementById(`t_${r}_${d}`);
@@ -613,13 +643,11 @@
         }
       }
 
-      // 清除成果統計
       ["stat_new_leads", "stat_proposals", "stat_contracts", "stat_activity_new", "stat_interviews", "stat_recruits"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = "";
       });
 
-      // 清除四大紀錄輸入框
       [
         "record_proposal_1", "record_proposal_2", "record_proposal_3",
         "record_dev_1", "record_dev_2", "record_dev_3",
@@ -630,10 +658,8 @@
         if (el) el.value = "";
       });
 
-      // 重新計算以歸零總分
       calculateAll();
 
-      // 移除 localStorage 快取
       try {
         localStorage.removeItem(STORAGE_KEY);
       } catch(e) {}
@@ -644,7 +670,6 @@
       }
     }
 
-    // 頁面載入初始化
     window.addEventListener("DOMContentLoaded", () => {
       initTable();
       loadSavedData();
