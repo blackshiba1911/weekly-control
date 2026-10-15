@@ -38,88 +38,91 @@
       -moz-appearance: textfield;
     }
 
-    /* 列印專屬優化樣式：嚴格鎖定單頁 A4 */
+    /* 列印專屬優化樣式：嚴格鎖定單頁 A4 且保證比例不變形 */
     @media print {
       @page {
         size: A4 portrait;
-        margin: 0.6cm 0.8cm; /* 緊湊邊距確保一頁容納 */
+        margin: 8mm 10mm;
       }
       *, *::before, *::after {
         box-sizing: border-box;
       }
       html, body {
-        height: auto !important;
+        width: 100% !important;
+        height: 100% !important;
+        overflow: hidden !important;
         background-color: #ffffff !important;
         color: #000000 !important;
         padding: 0 !important;
         margin: 0 !important;
-        font-size: 11px !important; /* 基準字級緊湊化 */
       }
       .no-print {
         display: none !important;
       }
+      /* 列印容器：固定為標準 A4 可視寬度 (約 185mm) 並居中，透過 scale 等比微縮 */
       .print-container {
         box-shadow: none !important;
         border: none !important;
-        max-width: 100% !important;
-        width: 100% !important;
+        width: 185mm !important;
+        max-width: 185mm !important;
+        margin: 0 auto !important;
         padding: 0 !important;
-        margin: 0 !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
+        transform: scale(0.96);
+        transform-origin: top center;
       }
-      /* 表格縮小間距 */
+
+      /* 表格嚴格等比設定 */
       .table-bordered {
         border-color: #000000 !important;
         width: 100% !important;
+        table-layout: fixed !important;
       }
       .table-bordered th, 
       .table-bordered td {
         border-color: #000000 !important;
-        padding-top: 1px !important;
-        padding-bottom: 1px !important;
-        padding-left: 2px !important;
-        padding-right: 2px !important;
-        font-size: 10px !important;
-        line-height: 1.15 !important;
+        padding: 3px 2px !important;
+        font-size: 11px !important;
+        line-height: 1.25 !important;
+        word-break: break-all;
       }
       .table-bordered input.t-input {
-        height: 20px !important;
-        font-size: 10px !important;
+        height: 24px !important;
+        font-size: 11px !important;
       }
-      /* 標題與各區塊間距大幅緊湊化 */
+
+      /* 標題與各區塊正常比例間距 */
       .print-title {
-        font-size: 18px !important;
-        margin-bottom: 4px !important;
+        font-size: 20px !important;
+        margin-bottom: 6px !important;
+        letter-spacing: 0.15em !important;
       }
       .print-section-gap {
-        margin-top: 5px !important;
+        margin-top: 8px !important;
       }
       .print-section-title {
-        font-size: 11px !important;
-        padding-top: 2px !important;
-        padding-bottom: 2px !important;
+        font-size: 11.5px !important;
+        padding-top: 3px !important;
+        padding-bottom: 3px !important;
         background-color: #f3f4f6 !important;
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
       }
       .print-stat-row {
-        font-size: 10.5px !important;
-        padding: 2px 4px !important;
+        font-size: 11px !important;
+        padding: 4px 6px !important;
       }
       .print-record-input {
-        padding-top: 2px !important;
-        padding-bottom: 2px !important;
-        font-size: 10px !important;
-        height: 20px !important;
+        padding-top: 4px !important;
+        padding-bottom: 4px !important;
+        font-size: 11px !important;
+        height: 25px !important;
       }
       input, textarea {
         border-color: transparent !important;
         background: transparent !important;
         color: #000000 !important;
-      }
-      .input-underlined {
-        border-bottom: 1px solid #000 !important;
       }
     }
   </style>
@@ -180,6 +183,25 @@
     <!-- 頂部工作量統計大表格 -->
     <div class="overflow-x-auto">
       <table class="w-full table-bordered text-center text-xs sm:text-sm select-none">
+        <colgroup>
+          <col style="width: 25%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 5%;">
+          <col style="width: 9%;">
+        </colgroup>
         <thead>
           <!-- 橫向第一列：日期區間、各天星期、總分 -->
           <tr class="bg-gray-50 text-gray-900 font-bold">
