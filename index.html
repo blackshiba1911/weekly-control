@@ -2,33 +2,24 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>20/100分表 - 業務週工作量統計</title>
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
   <style>
     body {
       font-family: 'Noto Sans TC', sans-serif;
       background-color: #f3f4f6;
       color: #1f2937;
+      -webkit-tap-highlight-color: transparent;
     }
     
-    /* 表格邊框實線風格 */
-    .table-bordered {
-      border: 2px solid #374151;
-      border-collapse: collapse;
-    }
-    .table-bordered th, 
-    .table-bordered td {
-      border: 1px solid #4b5563;
-    }
-    
-    /* 移除 input number 的上下微調箭頭 */
+    /* 移除 input[type=number] 微調箭頭 */
     input[type=number]::-webkit-inner-spin-button, 
     input[type=number]::-webkit-outer-spin-button { 
       -webkit-appearance: none; 
@@ -38,7 +29,28 @@
       -moz-appearance: textfield;
     }
 
-    /* 列印專屬優化樣式：嚴格鎖定單頁 A4 且保證比例不變形 */
+    /* 電腦端與列印共用表格邊框實線風格 */
+    .table-bordered {
+      border: 2px solid #374151;
+      border-collapse: collapse;
+    }
+    .table-bordered th, 
+    .table-bordered td {
+      border: 1px solid #4b5563;
+    }
+
+    /* 隱藏原生滾動條但保持滾動 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* =========================================
+       列印專屬優化樣式：嚴格鎖定單頁 A4 且保證比例不變形
+       ========================================= */
     @media print {
       @page {
         size: A4 portrait;
@@ -59,8 +71,18 @@
       .no-print {
         display: none !important;
       }
-      /* 列印容器：固定為標準 A4 可視寬度 (約 185mm) 並居中，透過 scale 等比微縮 */
+
+      /* 強制手機專用介面在列印時隱藏，桌面版標準報表容器顯示 */
+      .mobile-only-view {
+        display: none !important;
+      }
+      .desktop-table-container {
+        display: block !important;
+      }
+
+      /* 列印容器：標準 A4 寬度 (185mm) 置中，透過 scale 等比微縮收整 */
       .print-container {
+        display: block !important;
         box-shadow: none !important;
         border: none !important;
         width: 185mm !important;
@@ -127,41 +149,49 @@
     }
   </style>
 </head>
-<body class="py-6 px-3 sm:px-6 md:px-8 min-h-screen flex flex-col items-center">
+<body class="py-2.5 sm:py-6 px-2.5 sm:px-6 md:px-8 min-h-screen flex flex-col items-center">
 
-  <!-- 操作功能列 (列印時隱藏) -->
-  <header class="w-full max-w-4xl mb-4 flex flex-wrap items-center justify-between gap-3 bg-white p-4 rounded-xl shadow-sm border border-gray-200 no-print">
-    <div class="flex items-center gap-3">
-      <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white font-bold text-sm shadow">
-        20
-      </span>
-      <div>
-        <h1 class="text-base font-bold text-gray-800 leading-tight">業務工作量 20/100 分表</h1>
-        <div class="flex items-center gap-2 mt-0.5">
-          <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-          <span id="save-status" class="text-xs text-gray-500">已自動儲存於本機</span>
+  <!-- 操作功能頂欄 (列印時隱藏) -->
+  <header class="w-full max-w-4xl mb-3 sm:mb-4 bg-white p-3 sm:p-4 rounded-xl sm:rounded-2xl shadow-sm border border-gray-200 no-print flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-blue-600 text-white font-black text-sm shadow-sm">
+          20
+        </span>
+        <div>
+          <h1 class="text-sm sm:text-base font-bold text-gray-800 leading-tight">20 / 100 分表</h1>
+          <div class="flex items-center gap-1.5 mt-0.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span id="save-status" class="text-[11px] sm:text-xs text-gray-500">已自動儲存</span>
+          </div>
         </div>
+      </div>
+
+      <!-- 手機端顯示的總分小徽章 -->
+      <div class="sm:hidden flex items-center gap-1 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+        <span class="text-[11px] text-blue-700 font-medium">全週總分:</span>
+        <span id="mobile_header_grand_total" class="text-sm font-extrabold text-blue-800">0</span>
       </div>
     </div>
 
-    <!-- 右側功能按鈕 -->
-    <div class="flex items-center gap-2">
+    <!-- 右側功能按鈕組 -->
+    <div class="flex items-center gap-2 self-end sm:self-auto w-full sm:w-auto justify-end">
       <button 
         type="button" 
         onclick="window.print()" 
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-lg transition-colors border border-gray-300 shadow-sm"
-        title="列印或另存為單頁 PDF"
+        class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 active:bg-gray-300 rounded-lg transition-colors border border-gray-300 shadow-sm"
+        title="列印或另存為單頁 A4 PDF"
       >
         <svg class="w-4 h-4 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
         </svg>
-        <span>列印 (單頁A4)</span>
+        <span>列印 A4</span>
       </button>
 
       <button 
         type="button" 
         onclick="openResetModal()" 
-        class="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs sm:text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 rounded-lg transition-colors border border-rose-200 shadow-sm"
+        class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs sm:text-sm font-semibold text-rose-700 bg-rose-50 hover:bg-rose-100 active:bg-rose-200 rounded-lg transition-colors border border-rose-200 shadow-sm"
         title="清空全表開始新的一週"
       >
         <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -172,16 +202,77 @@
     </div>
   </header>
 
-  <!-- 主要紙本表單容器 -->
-  <main class="print-container w-full max-w-4xl bg-white p-5 sm:p-7 rounded-2xl shadow-md border border-gray-200 transition-all">
-    
-    <!-- 大標題 -->
-    <div class="text-center mb-2 sm:mb-3 print-title">
-      <h2 class="text-2xl sm:text-3xl font-extrabold tracking-wider text-gray-900 print:text-xl">20 / 100 分 表</h2>
+  <!-- =========================================================================
+       手機端專用：聚焦每日模式（DAY FOCUS MODE - 專為拇指觸控與小螢幕打造）
+       ========================================================================= -->
+  <section class="w-full max-w-4xl sm:hidden mobile-only-view no-print mb-3">
+    <!-- 日期區間輸入 -->
+    <div class="bg-white rounded-xl p-3 border border-gray-200 shadow-sm mb-2.5 flex items-center justify-between text-xs">
+      <span class="font-bold text-gray-700">統計區間：</span>
+      <div class="flex items-center gap-1">
+        <input type="text" id="mobile_date_start" placeholder="MM/DD" class="w-20 text-center border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:border-blue-600" oninput="syncDateFromMobile('start')">
+        <span class="text-gray-400">至</span>
+        <input type="text" id="mobile_date_end" placeholder="MM/DD" class="w-20 text-center border border-gray-300 rounded px-1.5 py-1 focus:outline-none focus:border-blue-600" oninput="syncDateFromMobile('end')">
+      </div>
     </div>
 
-    <!-- 頂部工作量統計大表格 -->
-    <div class="overflow-x-auto">
+    <!-- 模式切換按鈕：每日輸入 / 全週表格檢視 -->
+    <div class="flex items-center justify-between gap-1 mb-2 px-0.5">
+      <span class="text-xs font-bold text-gray-700">填寫方式</span>
+      <div class="inline-flex rounded-lg bg-gray-200 p-0.5 text-xs font-medium">
+        <button type="button" id="tab_btn_cards" onclick="setMobileView('cards')" class="px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-sm">
+          📱 每日填寫
+        </button>
+        <button type="button" id="tab_btn_table" onclick="setMobileView('table')" class="px-2.5 py-1 rounded-md text-gray-600 hover:text-gray-900">
+          📊 全週表格
+        </button>
+      </div>
+    </div>
+
+    <!-- 星期切換分頁橫向滑動軸 (Cards 模式顯示) -->
+    <div id="mobile_day_selector_container">
+      <div class="flex items-center gap-1.5 overflow-x-auto no-scrollbar pb-1">
+        <button type="button" onclick="selectMobileDay(0)" id="mday_tab_0" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow">週一</button>
+        <button type="button" onclick="selectMobileDay(1)" id="mday_tab_1" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週二</button>
+        <button type="button" onclick="selectMobileDay(2)" id="mday_tab_2" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週三</button>
+        <button type="button" onclick="selectMobileDay(3)" id="mday_tab_3" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週四</button>
+        <button type="button" onclick="selectMobileDay(4)" id="mday_tab_4" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週五</button>
+        <button type="button" onclick="selectMobileDay(5)" id="mday_tab_5" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週六</button>
+        <button type="button" onclick="selectMobileDay(6)" id="mday_tab_6" class="mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200">週日</button>
+      </div>
+
+      <!-- 當日得分統計 Banner -->
+      <div class="mt-2 mb-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl p-2.5 shadow-sm flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="text-xs uppercase font-extrabold tracking-wider bg-white/20 px-2 py-0.5 rounded" id="mobile_current_day_label">星期一</span>
+          <span class="text-xs text-blue-100">今日小計</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs">
+          <span>T次數: <b id="mobile_day_t_sum" class="text-amber-200 text-sm">0</b></span>
+          <span class="text-white/40">|</span>
+          <span>P分數: <b id="mobile_day_p_sum" class="text-white text-base font-black">0</b> 分</span>
+        </div>
+      </div>
+
+      <!-- 6 項工作量觸控大卡片 -->
+      <div id="mobile_items_cards_container" class="space-y-2">
+        <!-- 由 JavaScript 動態繪製好點擊的大卡片 -->
+      </div>
+    </div>
+  </section>
+
+  <!-- =========================================================================
+       主要表單容器（電腦端完整大表格 / 列印專用 A4 單頁容器）
+       ========================================================================= -->
+  <main id="main_sheet_container" class="print-container w-full max-w-4xl bg-white p-3.5 sm:p-7 rounded-2xl shadow-md border border-gray-200 transition-all">
+    
+    <!-- 大標題 -->
+    <div class="text-center mb-2.5 sm:mb-3 print-title">
+      <h2 class="text-xl sm:text-3xl font-extrabold tracking-wider text-gray-900 print:text-xl">20 / 100 分 表</h2>
+    </div>
+
+    <!-- 頂部工作量統計大表格 (電腦端標準顯示；手機端可由按鈕切換展開；列印強制顯示) -->
+    <div id="desktop_table_wrapper" class="desktop-table-container overflow-x-auto">
       <table class="w-full table-bordered text-center text-xs sm:text-sm select-none">
         <colgroup>
           <col style="width: 25%;">
@@ -205,14 +296,14 @@
         <thead>
           <!-- 橫向第一列：日期區間、各天星期、總分 -->
           <tr class="bg-gray-50 text-gray-900 font-bold">
-            <th class="p-1 sm:p-1.5 w-36 sm:w-44 text-center">
+            <th class="p-1 sm:p-1.5 w-32 sm:w-44 text-center">
               <div class="flex items-center justify-center space-x-1">
-                <input type="text" id="date_start" placeholder="  /  " class="w-12 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="saveData()">
+                <input type="text" id="date_start" placeholder="  /  " class="w-11 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="syncDateFromDesktop('start')">
                 <span class="text-gray-500 font-normal">~</span>
-                <input type="text" id="date_end" placeholder="  /  " class="w-12 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="saveData()">
+                <input type="text" id="date_end" placeholder="  /  " class="w-11 sm:w-14 text-center border-b border-gray-400 bg-transparent py-0.5 focus:outline-none focus:border-blue-600 font-normal text-xs" oninput="syncDateFromDesktop('end')">
               </div>
             </th>
-            <th class="w-8 sm:w-11 py-1 text-center font-bold" rowspan="2">
+            <th class="w-7 sm:w-11 py-1 text-center font-bold" rowspan="2">
               分<br>數
             </th>
             <th colspan="2" class="py-0.5">星期一</th>
@@ -222,34 +313,34 @@
             <th colspan="2" class="py-0.5">星期五</th>
             <th colspan="2" class="py-0.5">星期六</th>
             <th colspan="2" class="py-0.5">星期日</th>
-            <th class="w-11 sm:w-14 py-1 font-bold" rowspan="2">
+            <th class="w-10 sm:w-14 py-1 font-bold" rowspan="2">
               總分
             </th>
           </tr>
           <!-- 橫向第二列：工作量統計字樣、各天的 T 與 P -->
           <tr class="bg-gray-50 text-gray-800 font-bold">
-            <th class="py-0.5 px-1 font-semibold">工作量統計</th>
+            <th class="py-0.5 px-1 font-semibold text-[11px] sm:text-xs">工作量統計</th>
             <!-- Mon -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Tue -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Wed -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Thu -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Fri -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Sat -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
             <!-- Sun -->
-            <th class="w-7 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
-            <th class="w-7 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-amber-50/50 text-amber-900">T</th>
+            <th class="w-6 sm:w-8 py-0.5 bg-blue-50/50 text-blue-900">P</th>
           </tr>
         </thead>
         <tbody id="score-table-body" class="divide-y divide-gray-300">
@@ -261,25 +352,25 @@
             <td class="py-1 px-1 text-center font-bold tracking-wider">總 分</td>
             <td class="bg-gray-200/50 text-gray-400">-</td>
             <!-- Mon -->
-            <td id="col_t_0" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_0" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_0" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Tue -->
-            <td id="col_t_1" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_1" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_1" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Wed -->
-            <td id="col_t_2" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_2" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_2" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Thu -->
-            <td id="col_t_3" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_3" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_3" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Fri -->
-            <td id="col_t_4" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_4" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_4" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Sat -->
-            <td id="col_t_5" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_5" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_5" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- Sun -->
-            <td id="col_t_6" class="py-0.5 text-gray-500 font-normal text-xs">-</td>
+            <td id="col_t_6" class="py-0.5 text-gray-500 font-normal text-[11px] sm:text-xs">-</td>
             <td id="col_p_6" class="py-0.5 text-blue-700 font-bold bg-blue-50/40">0</td>
             <!-- 最終全週總分 -->
             <td id="grand_total" class="py-0.5 text-xs sm:text-sm font-extrabold text-blue-800 bg-blue-100/70">
@@ -291,105 +382,119 @@
     </div>
 
     <!-- 中段：週成果統計 -->
-    <div class="mt-2.5 sm:mt-3 print-section-gap border-2 border-gray-700">
+    <div class="mt-3.5 sm:mt-3 print-section-gap border-2 border-gray-700 rounded-lg sm:rounded-none overflow-hidden">
       <div class="py-1 text-center font-bold tracking-widest text-xs sm:text-sm border-b border-gray-700 bg-gray-50 print-section-title">
         週 成 果 統 計
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 border-b border-gray-700 text-xs">
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">新增新名單</span>
-          <input type="text" id="stat_new_leads" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>位</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_new_leads" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">位</span>
+          </div>
         </div>
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">建議書</span>
-          <input type="text" id="stat_proposals" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>份</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_proposals" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">份</span>
+          </div>
         </div>
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">簽約量</span>
-          <input type="text" id="stat_contracts" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>份</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_contracts" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">份</span>
+          </div>
         </div>
       </div>
       <div class="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-gray-700 text-xs">
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">課程活動新人</span>
-          <input type="text" id="stat_activity_new" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>人</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_activity_new" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">人</span>
+          </div>
         </div>
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">面談量</span>
-          <input type="text" id="stat_interviews" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>次</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_interviews" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">次</span>
+          </div>
         </div>
-        <div class="p-1 sm:p-1.5 print-stat-row flex items-center justify-center space-x-1">
+        <div class="p-2 sm:p-1.5 print-stat-row flex items-center justify-between sm:justify-center space-x-1 bg-white">
           <span class="font-medium whitespace-nowrap">報聘量</span>
-          <input type="text" id="stat_recruits" class="w-14 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0" oninput="saveData()">
-          <span>人</span>
+          <div class="flex items-center">
+            <input type="text" id="stat_recruits" class="w-16 sm:w-16 text-center border-b border-gray-800 focus:border-blue-600 focus:outline-none bg-transparent py-0.5 font-semibold text-gray-800" oninput="saveData()">
+            <span class="ml-1">人</span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 下段：四大紀錄欄位 -->
-    <div class="mt-2.5 sm:mt-3 print-section-gap border-2 border-gray-700 divide-y-2 divide-gray-700">
+    <div class="mt-3 sm:mt-3 print-section-gap border-2 border-gray-700 divide-y-2 divide-gray-700 rounded-lg sm:rounded-none overflow-hidden">
       
       <!-- 區塊 1：本週建議書量紀錄 -->
       <div>
-        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
+        <div class="py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 建 議 書 量 紀 錄
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_proposal_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_proposal_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_proposal_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_proposal_1" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="1. 填寫紀錄..." oninput="saveData()">
+          <input type="text" id="record_proposal_2" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="2. 填寫紀錄..." oninput="saveData()">
+          <input type="text" id="record_proposal_3" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="3. 填寫紀錄..." oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 2：本週開發紀錄 -->
       <div>
-        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
+        <div class="py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 開 發 紀 錄
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_dev_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_dev_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_dev_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_dev_1" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="1. 填寫紀錄..." oninput="saveData()">
+          <input type="text" id="record_dev_2" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="2. 填寫紀錄..." oninput="saveData()">
+          <input type="text" id="record_dev_3" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="3. 填寫紀錄..." oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 3：課程活動約訪名單 -->
       <div>
-        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
+        <div class="py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           課 程 活 動 約 訪 名 單
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_invite_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_invite_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_invite_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_invite_1" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="1. 填寫名單..." oninput="saveData()">
+          <input type="text" id="record_invite_2" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="2. 填寫名單..." oninput="saveData()">
+          <input type="text" id="record_invite_3" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="3. 填寫名單..." oninput="saveData()">
         </div>
       </div>
 
       <!-- 區塊 4：本週重要待辦事項 -->
       <div>
-        <div class="py-0.5 sm:py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
+        <div class="py-1 text-center font-bold tracking-widest text-xs bg-gray-50 border-b border-gray-700 print-section-title">
           本 週 重 要 待 辦 事 項
         </div>
         <div class="divide-y divide-gray-400">
-          <input type="text" id="record_todo_1" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_todo_2" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
-          <input type="text" id="record_todo_3" class="print-record-input w-full px-2 py-1 text-xs focus:bg-blue-50/20 focus:outline-none" oninput="saveData()">
+          <input type="text" id="record_todo_1" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="1. 待辦事項..." oninput="saveData()">
+          <input type="text" id="record_todo_2" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="2. 待辦事項..." oninput="saveData()">
+          <input type="text" id="record_todo_3" class="print-record-input w-full px-2.5 py-1.5 sm:py-1 text-xs focus:bg-blue-50/30 focus:outline-none" placeholder="3. 待辦事項..." oninput="saveData()">
         </div>
       </div>
 
     </div>
   </main>
 
-  <footer class="mt-3 text-xs text-gray-500 no-print text-center">
-    💡 提示：在「T」格輸入次數後系統自動計算。點擊「列印」已設定自動收納於單張 A4 內。
+  <footer class="mt-3 mb-6 text-xs text-gray-500 no-print text-center px-4">
+    💡 提示：手機支援每日卡片快速點擊計數，電腦提供全週大表即時輸入；列印時皆會自動匯出為精準單頁 A4。
   </footer>
 
-  <!-- 一鍵清零確認對話框 -->
+  <!-- =========================================================================
+       一鍵清零確認對話框
+       ========================================================================= -->
   <div id="reset-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/60 backdrop-blur-sm opacity-0 pointer-events-none transition-opacity duration-200">
     <div class="bg-white rounded-2xl max-w-sm w-full mx-4 p-5 shadow-2xl border border-gray-100 transform scale-95 transition-transform duration-200" id="reset-modal-box">
       <div class="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mb-3">
@@ -422,18 +527,25 @@
 
   <script>
     const WORK_ITEMS = [
-      { name: "接觸/約訪/開發<br>保服/理賠/帶人", score: 1 },
-      { name: "取得行程/會談機會", score: 2 },
-      { name: "諮詢服務/搜集資料", score: 3 },
-      { name: "建議書/面談量", score: 3 },
-      { name: "簽要保書/新人考試", score: 4 },
-      { name: "M受理/新人報聘", score: 5 }
+      { name: "接觸/約訪/開發<br>保服/理賠/帶人", shortName: "接觸/約訪/開發/保服/理賠", score: 1 },
+      { name: "取得行程/會談機會", shortName: "取得行程/會談機會", score: 2 },
+      { name: "諮詢服務/搜集資料", shortName: "諮詢服務/搜集資料", score: 3 },
+      { name: "建議書/面談量", shortName: "建議書/面談量", score: 3 },
+      { name: "簽要保書/新人考試", shortName: "簽要保書/新人考試", score: 4 },
+      { name: "M受理/新人報聘", shortName: "M受理/新人報聘", score: 5 }
     ];
 
+    const DAY_NAMES = ["星期一", "星期二", "星期三", "星期四", "星期五", "星期六", "星期日"];
     const DAYS_COUNT = 7;
-    const STORAGE_KEY = "weekly_20_100_sheet_data_v1";
+    const STORAGE_KEY = "weekly_20_100_sheet_data_v2";
 
-    function initTable() {
+    let currentSelectedDay = 0; // 手機端當前選中的星期 (0=週一)
+    let currentMobileView = "cards"; // 'cards' (每日卡片) | 'table' (全週表格)
+
+    /* =========================================================================
+       初始化表格與手機端卡片
+       ========================================================================= */
+    function initDesktopTable() {
       const tbody = document.getElementById("score-table-body");
       let html = "";
 
@@ -479,8 +591,189 @@
       tbody.innerHTML = html;
     }
 
+    function renderMobileCards() {
+      const container = document.getElementById("mobile_items_cards_container");
+      let html = "";
+
+      WORK_ITEMS.forEach((item, rIdx) => {
+        html += `
+          <div class="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex items-center justify-between gap-3">
+            <div class="flex-1 min-w-0">
+              <div class="flex items-center gap-1.5 mb-0.5">
+                <span class="inline-block px-1.5 py-0.5 text-[10px] font-bold rounded bg-amber-100 text-amber-800">${item.score} 分</span>
+                <span class="text-xs font-bold text-gray-800 truncate">${item.shortName}</span>
+              </div>
+              <div class="text-[11px] text-gray-500">
+                本項小計: <span id="m_card_p_${rIdx}" class="font-bold text-blue-600">0</span> 分
+              </div>
+            </div>
+
+            <!-- 觸控友善步進增減按鈕與輸入框 -->
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button 
+                type="button" 
+                onclick="stepMobileT(${rIdx}, -1)" 
+                class="w-9 h-9 rounded-lg bg-gray-100 active:bg-gray-200 border border-gray-300 text-gray-700 flex items-center justify-center text-lg font-bold select-none"
+              >
+                -
+              </button>
+              <input 
+                type="number" 
+                id="m_card_t_${rIdx}" 
+                min="0"
+                class="w-12 h-9 text-center border-2 border-gray-300 focus:border-blue-600 rounded-lg text-sm font-bold text-gray-900 bg-gray-50"
+                oninput="onMobileCardInput(${rIdx})"
+                placeholder="0"
+              />
+              <button 
+                type="button" 
+                onclick="stepMobileT(${rIdx}, 1)" 
+                class="w-9 h-9 rounded-lg bg-blue-50 active:bg-blue-100 border border-blue-300 text-blue-700 flex items-center justify-center text-lg font-bold select-none"
+              >
+                +
+              </button>
+            </div>
+          </div>
+        `;
+      });
+
+      container.innerHTML = html;
+      updateMobileCardsValues();
+    }
+
+    /* =========================================================================
+       手機端切換與數值同步邏輯
+       ========================================================================= */
+    function setMobileView(view) {
+      currentMobileView = view;
+      const btnCards = document.getElementById("tab_btn_cards");
+      const btnTable = document.getElementById("tab_btn_table");
+      const daySelector = document.getElementById("mobile_day_selector_container");
+      const desktopWrapper = document.getElementById("desktop_table_wrapper");
+
+      if (view === "cards") {
+        btnCards.className = "px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-sm";
+        btnTable.className = "px-2.5 py-1 rounded-md text-gray-600 hover:text-gray-900";
+        daySelector.classList.remove("hidden");
+        // 隱藏手機中的大表格，只顯示卡片
+        desktopWrapper.classList.add("hidden");
+        desktopWrapper.classList.remove("block");
+        updateMobileCardsValues();
+      } else {
+        btnTable.className = "px-2.5 py-1 rounded-md bg-white text-blue-700 font-bold shadow-sm";
+        btnCards.className = "px-2.5 py-1 rounded-md text-gray-600 hover:text-gray-900";
+        daySelector.classList.add("hidden");
+        // 手機中展開滑動大表格
+        desktopWrapper.classList.remove("hidden");
+        desktopWrapper.classList.add("block");
+      }
+    }
+
+    function selectMobileDay(dayIdx) {
+      currentSelectedDay = dayIdx;
+
+      // 更新分頁按鈕樣式
+      for (let i = 0; i < DAYS_COUNT; i++) {
+        const btn = document.getElementById(`mday_tab_${i}`);
+        if (i === dayIdx) {
+          btn.className = "mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-blue-600 text-white shadow";
+        } else {
+          btn.className = "mday-tab flex-1 min-w-[50px] py-1.5 text-xs font-semibold rounded-lg bg-white text-gray-700 border border-gray-200";
+        }
+      }
+
+      document.getElementById("mobile_current_day_label").textContent = DAY_NAMES[dayIdx];
+      updateMobileCardsValues();
+    }
+
+    function updateMobileCardsValues() {
+      let dayTSum = 0;
+      let dayPSum = 0;
+
+      WORK_ITEMS.forEach((item, rIdx) => {
+        const desktopInput = document.getElementById(`t_${rIdx}_${currentSelectedDay}`);
+        const cardInput = document.getElementById(`m_card_t_${rIdx}`);
+        const cardP = document.getElementById(`m_card_p_${rIdx}`);
+
+        const val = desktopInput ? desktopInput.value : "";
+        if (cardInput) {
+          cardInput.value = val;
+        }
+
+        const numVal = parseFloat(val) || 0;
+        const pScore = numVal * item.score;
+        if (cardP) {
+          cardP.textContent = numVal > 0 ? pScore : 0;
+        }
+
+        dayTSum += numVal;
+        dayPSum += pScore;
+      });
+
+      const dayTLabel = document.getElementById("mobile_day_t_sum");
+      const dayPLabel = document.getElementById("mobile_day_p_sum");
+      if (dayTLabel) dayTLabel.textContent = dayTSum;
+      if (dayPLabel) dayPLabel.textContent = dayPSum;
+    }
+
+    function onMobileCardInput(rowIdx) {
+      const cardInput = document.getElementById(`m_card_t_${rowIdx}`);
+      const desktopInput = document.getElementById(`t_${rowIdx}_${currentSelectedDay}`);
+      if (desktopInput && cardInput) {
+        desktopInput.value = cardInput.value;
+        calculateAll();
+        updateMobileCardsValues();
+        saveData();
+      }
+    }
+
+    function stepMobileT(rowIdx, delta) {
+      const cardInput = document.getElementById(`m_card_t_${rowIdx}`);
+      const desktopInput = document.getElementById(`t_${rowIdx}_${currentSelectedDay}`);
+      let currentVal = parseFloat(desktopInput.value) || 0;
+      currentVal = Math.max(0, currentVal + delta);
+      
+      const formatted = currentVal === 0 ? "" : currentVal;
+      if (desktopInput) desktopInput.value = formatted;
+      if (cardInput) cardInput.value = formatted;
+
+      calculateAll();
+      updateMobileCardsValues();
+      saveData();
+    }
+
+    function syncDateFromMobile(type) {
+      if (type === 'start') {
+        const val = document.getElementById("mobile_date_start").value;
+        document.getElementById("date_start").value = val;
+      } else {
+        const val = document.getElementById("mobile_date_end").value;
+        document.getElementById("date_end").value = val;
+      }
+      saveData();
+    }
+
+    function syncDateFromDesktop(type) {
+      if (type === 'start') {
+        const val = document.getElementById("date_start").value;
+        const mob = document.getElementById("mobile_date_start");
+        if (mob) mob.value = val;
+      } else {
+        const val = document.getElementById("date_end").value;
+        const mob = document.getElementById("mobile_date_end");
+        if (mob) mob.value = val;
+      }
+      saveData();
+    }
+
+    /* =========================================================================
+       桌面端輸入與主計算引擎
+       ========================================================================= */
     function onTInputChange(row, day) {
       calculateAll();
+      if (day === currentSelectedDay) {
+        updateMobileCardsValues();
+      }
       saveData();
     }
 
@@ -527,8 +820,17 @@
       if (grandTotalCell) {
         grandTotalCell.textContent = grandTotal;
       }
+
+      // 同步手機端頂部總分標籤
+      const mobHeaderGrand = document.getElementById("mobile_header_grand_total");
+      if (mobHeaderGrand) {
+        mobHeaderGrand.textContent = grandTotal;
+      }
     }
 
+    /* =========================================================================
+       資料存取（localStorage）
+       ========================================================================= */
     function saveData() {
       const data = {
         dates: {
@@ -588,8 +890,16 @@
         const data = JSON.parse(saved);
 
         if (data.dates) {
-          if (data.dates.start) document.getElementById("date_start").value = data.dates.start;
-          if (data.dates.end) document.getElementById("date_end").value = data.dates.end;
+          if (data.dates.start) {
+            document.getElementById("date_start").value = data.dates.start;
+            const mob = document.getElementById("mobile_date_start");
+            if (mob) mob.value = data.dates.start;
+          }
+          if (data.dates.end) {
+            document.getElementById("date_end").value = data.dates.end;
+            const mob = document.getElementById("mobile_date_end");
+            if (mob) mob.value = data.dates.end;
+          }
         }
 
         if (data.tGrid) {
@@ -629,16 +939,20 @@
         }
 
         calculateAll();
+        updateMobileCardsValues();
 
         if (data.lastUpdated) {
           const statusEl = document.getElementById("save-status");
-          if (statusEl) statusEl.textContent = `已載入先前記綠 (${data.lastUpdated})`;
+          if (statusEl) statusEl.textContent = `已載入 (${data.lastUpdated})`;
         }
       } catch (e) {
         console.error("載入失敗：", e);
       }
     }
 
+    /* =========================================================================
+       對話框與清空重置
+       ========================================================================= */
     function openResetModal() {
       const modal = document.getElementById("reset-modal");
       const box = document.getElementById("reset-modal-box");
@@ -681,6 +995,7 @@
       });
 
       calculateAll();
+      updateMobileCardsValues();
 
       try {
         localStorage.removeItem(STORAGE_KEY);
@@ -692,9 +1007,18 @@
       }
     }
 
+    // 依螢幕寬度初始調整預設視圖
+    function adaptInitialView() {
+      if (window.innerWidth < 640) {
+        setMobileView("cards");
+      }
+    }
+
     window.addEventListener("DOMContentLoaded", () => {
-      initTable();
+      initDesktopTable();
+      renderMobileCards();
       loadSavedData();
+      adaptInitialView();
     });
   </script>
 </body>
