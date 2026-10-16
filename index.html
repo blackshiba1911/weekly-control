@@ -293,7 +293,7 @@
 
     </div>
   </main>
-  <script>
+<script>
     // 1. Firebase 雲端初始化
     const fbConfig = {
       apiKey: "AIzaSyAHX8iMmUQhf699jC3nk4BOl8dvy1CQCL0",
@@ -435,10 +435,32 @@
       document.getElementById('grand-total').textContent = weeklyTotal;
     }
 
-    // 5. 雲端讀寫處理
+    // 5. 雲端讀寫處理（已包含二維陣列修復邏輯）
     function updateSyncIndicator(msg) {
       const elem = document.getElementById('sync-status');
       if (elem) elem.textContent = msg;
+    }
+
+    // 避開 Firestore 不支援 Nested Arrays 限制
+    function serializeGrid(arr) {
+      let obj = {};
+      for (let r = 0; r < 6; r++) {
+        for (let d = 0; d < 7; d++) {
+          obj[`r${r}_d${d}`] = (arr && arr[r] && arr[r][d]) || "";
+        }
+      }
+      return obj;
+    }
+
+    function deserializeGrid(obj) {
+      let arr = Array.from({ length: 6 }, () => Array(7).fill(""));
+      if (!obj) return arr;
+      for (let r = 0; r < 6; r++) {
+        for (let d = 0; d < 7; d++) {
+          arr[r][d] = obj[`r${r}_d${d}`] || "";
+        }
+      }
+      return arr;
     }
 
     async function syncToDatabase() {
@@ -453,10 +475,18 @@
       if (cloudDb) {
         try {
           const docId = `${activeMember}_${targetWeek}`;
+          const payload = {
+            t_flat: serializeGrid(reportState.t),
+            dateStart: reportState.dateStart || "",
+            dateEnd: reportState.dateEnd || "",
+            stats: reportState.stats || {},
+            notes: reportState.notes || {}
+          };
+
           await cloudDb.collection("weekly_reports").doc(docId).set({
             member: activeMember,
             week: targetWeek,
-            data: reportState,
+            data: payload,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
           updateSyncIndicator('已同步雲端');
@@ -488,7 +518,14 @@
           const docId = `${activeMember}_${targetWeek}`;
           const snapshot = await cloudDb.collection("weekly_reports").doc(docId).get();
           if (snapshot.exists) {
-            reportState = snapshot.data().data;
+            const rawData = snapshot.data().data;
+            reportState = {
+              t: deserializeGrid(rawData.t_flat),
+              dateStart: rawData.dateStart || "",
+              dateEnd: rawData.dateEnd || "",
+              stats: rawData.stats || {},
+              notes: rawData.notes || {}
+            };
             isFetched = true;
             updateSyncIndicator('已同步雲端');
           }
@@ -514,7 +551,7 @@
         }
       }
 
-      // 填回表單
+      // 填回畫面各欄位
       document.querySelectorAll('.input-t').forEach(el => {
         const r = el.dataset.row;
         const d = el.dataset.day;
