@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>20/100分表 - 雲端版</title>
+  <title>20/100分表 - 雲端團隊版</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- 引入 Google Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/10.9.0/firebase-app-compat.js"></script>
@@ -100,13 +100,13 @@
       <div class="flex items-center justify-between gap-2">
         <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
           <label class="text-xs font-bold text-slate-500 whitespace-nowrap">成員</label>
-          <input type="text" id="member-id-input" placeholder="姓名/代號" class="flex-1 sm:w-32 px-2.5 py-1.5 text-sm font-semibold border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <button id="btn-switch-member" type="button" class="px-3.5 py-1.5 text-xs bg-slate-800 active:bg-slate-950 text-white font-bold rounded shadow-sm touch-manipulation cursor-pointer">
+          <input type="text" id="member-id-input" placeholder="請輸入姓名/代號" class="flex-1 sm:w-36 px-2.5 py-1.5 text-sm font-semibold border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <button id="btn-switch-member" type="button" class="px-4 py-1.5 text-xs bg-slate-800 active:bg-slate-950 text-white font-bold rounded shadow-sm cursor-pointer select-none">
             載入
           </button>
         </div>
 
-        <div class="flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 border border-slate-200 shrink-0" id="sync-badge">
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 border border-slate-200 shrink-0" id="sync-badge">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span id="sync-status" class="text-slate-600 text-[11px]">雲端就緒</span>
         </div>
@@ -114,17 +114,16 @@
 
       <!-- 右側按鈕組 -->
       <div class="flex items-center justify-end gap-2 shrink-0">
-        <!-- 手機模式切換 -->
-        <button id="btn-toggle-view" type="button" class="md:hidden flex-1 sm:flex-initial py-1.5 px-2.5 text-xs font-semibold rounded border border-blue-200 bg-blue-50 text-blue-700 active:bg-blue-100 touch-manipulation">
+        <button id="btn-toggle-view" type="button" class="md:hidden flex-1 sm:flex-initial py-1.5 px-2.5 text-xs font-semibold rounded border border-blue-200 bg-blue-50 text-blue-700 active:bg-blue-100">
           <span id="toggle-view-text">📊 全週大表</span>
         </button>
 
-        <button id="btn-print" type="button" class="flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-indigo-600 active:bg-indigo-700 text-white shadow-sm touch-manipulation">
+        <button id="btn-print" type="button" class="flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-indigo-600 active:bg-indigo-700 text-white shadow-sm">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
           列印
         </button>
 
-        <button id="btn-clear" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded border border-red-200 text-red-600 active:bg-red-50 touch-manipulation">
+        <button id="btn-clear" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded border border-red-200 text-red-600 active:bg-red-50">
           一鍵清零
         </button>
       </div>
@@ -140,6 +139,7 @@
         <h1 class="text-2xl sm:text-3xl font-extrabold tracking-widest text-slate-900">20 / 100 分 表</h1>
         <div class="absolute right-0 top-1 text-xs text-slate-500 font-mono" id="current-week-label">
           週次: <span id="week-display" class="font-bold text-slate-700"></span>
+          <span class="ml-1 text-[10px] text-slate-400">v2.0</span>
         </div>
       </div>
 
@@ -204,7 +204,6 @@
           <tfoot>
             <tr class="bg-slate-100 font-bold border-t-2 border-slate-700 print-row-h">
               <td colspan="2" class="py-1">總分</td>
-              <!-- 各日 P 總計 -->
               <td colspan="2" class="text-blue-700" id="col-p-sum-0">0</td>
               <td colspan="2" class="text-blue-700" id="col-p-sum-1">0</td>
               <td colspan="2" class="text-blue-700" id="col-p-sum-2">0</td>
@@ -259,7 +258,6 @@
 
       <!-- 四大自由記錄欄位 -->
       <div class="mt-4 space-y-3">
-        <!-- 建議書量紀錄 -->
         <div class="border border-slate-700 rounded-sm">
           <div class="bg-slate-50 border-b border-slate-700 text-center py-0.5 text-xs font-bold tracking-widest">本 週 建 議 書 量 紀 錄</div>
           <div class="p-1 space-y-1">
@@ -268,7 +266,6 @@
           </div>
         </div>
 
-        <!-- 本週開發紀錄 -->
         <div class="border border-slate-700 rounded-sm">
           <div class="bg-slate-50 border-b border-slate-700 text-center py-0.5 text-xs font-bold tracking-widest">本 週 開 發 紀 錄</div>
           <div class="p-1 space-y-1">
@@ -277,7 +274,6 @@
           </div>
         </div>
 
-        <!-- 課程活動約訪名單 -->
         <div class="border border-slate-700 rounded-sm">
           <div class="bg-slate-50 border-b border-slate-700 text-center py-0.5 text-xs font-bold tracking-widest">課 程 活 動 約 訪 名 單</div>
           <div class="p-1 space-y-1">
@@ -286,7 +282,6 @@
           </div>
         </div>
 
-        <!-- 本週重要待辦事項 -->
         <div class="border border-slate-700 rounded-sm">
           <div class="bg-slate-50 border-b border-slate-700 text-center py-0.5 text-xs font-bold tracking-widest">本 週 重 要 待 辦 事 項</div>
           <div class="p-1 space-y-1">
@@ -298,12 +293,9 @@
 
     </div>
   </main>
-
   <script>
-    // ==========================================
-    // 1. Firebase 金鑰設定區（已為您填入專屬設定）
-    // ==========================================
-    const firebaseConfig = {
+    // 1. Firebase 雲端初始化
+    const fbConfig = {
       apiKey: "AIzaSyAHX8iMmUQhf699jC3nk4BOl8dvy1CQCL0",
       authDomain: "weekly-control.firebaseapp.com",
       projectId: "weekly-control",
@@ -312,380 +304,371 @@
       appId: "1:67075158059:web:b21942581c02ab3444fa6e"
     };
 
-    let db = null;
+    let cloudDb = null;
     try {
-      firebase.initializeApp(firebaseConfig);
-      db = firebase.firestore();
-    } catch (e) {
-      console.warn("Firebase 未設定或連線失敗，自動降級為本機模式", e);
+      if (typeof firebase !== 'undefined') {
+        firebase.initializeApp(fbConfig);
+        cloudDb = firebase.firestore();
+      }
+    } catch (err) {
+      console.warn("雲端模組載入異常，改用本機快取:", err);
     }
 
-    // ==========================================
-    // 2. 項目與常數定義
-    // ==========================================
-    const ITEMS = [
-      { id: 0, title: "接觸/約訪/開發<br>保服/理賠/帶人", weight: 1 },
-      { id: 1, title: "取得行程/會談機會", weight: 2 },
-      { id: 2, title: "咨詢服務/搜集資料", weight: 3 },
-      { id: 3, title: "建議書/面談量", weight: 3 },
-      { id: 4, title: "簽要保書/新人考試", weight: 4 },
-      { id: 5, title: "M受理/新人報聘", weight: 5 }
+    // 2. 項目與週次定義
+    const SCORE_ITEMS = [
+      { id: 0, text: "接觸/約訪/開發<br>保服/理賠/帶人", weight: 1 },
+      { id: 1, text: "取得行程/會談機會", weight: 2 },
+      { id: 2, text: "咨詢服務/搜集資料", weight: 3 },
+      { id: 3, text: "建議書/面談量", weight: 3 },
+      { id: 4, text: "簽要保書/新人考試", weight: 4 },
+      { id: 5, text: "M受理/新人報聘", weight: 5 }
     ];
-    const DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    const WEEK_DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
 
-    // 取得當前年份與 ISO 週數（如 2026-W42）
-    function getWeekId() {
-      const d = new Date();
-      d.setHours(0,0,0,0);
-      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-      const week1 = new Date(d.getFullYear(), 0, 4);
-      const weekNo = 1 + Math.round(((d.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
-      return `${d.getFullYear()}-W${String(weekNo).padStart(2, '0')}`;
+    function fetchCurrentWeek() {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      now.setDate(now.getDate() + 3 - (now.getDay() + 6) % 7);
+      const jan4 = new Date(now.getFullYear(), 0, 4);
+      const diff = (now.getTime() - jan4.getTime()) / 86400000;
+      const weekNum = 1 + Math.round((diff - 3 + (jan4.getDay() + 6) % 7) / 7);
+      return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
     }
 
-    const currentWeekId = getWeekId();
-    document.getElementById('week-display').textContent = currentWeekId;
+    const targetWeek = fetchCurrentWeek();
+    document.getElementById('week-display').textContent = targetWeek;
 
-    // 取得當前成員代號
-    let currentMember = localStorage.getItem('score_tracker_member') || '承樺';
-    document.getElementById('member-id-input').value = currentMember;
+    // 預設為空白，讓使用者自行輸入
+    let activeMember = localStorage.getItem('score_tracker_member') || '';
+    document.getElementById('member-id-input').value = activeMember;
 
-    let activeDayIndex = (new Date().getDay() + 6) % 7; // 預設聚焦今天
-    let formData = {
-      t: Array.from({length: 6}, () => Array(7).fill("")),
+    let selectedDay = (new Date().getDay() + 6) % 7;
+    let reportState = {
+      t: Array.from({ length: 6 }, () => Array(7).fill("")),
       dateStart: "",
       dateEnd: "",
       stats: {},
       notes: {}
     };
 
-    let debounceTimer = null;
+    let syncTimer = null;
 
-    // ==========================================
-    // 3. 畫面生成（大表 & 手機卡片）
-    // ==========================================
-    function initUI() {
-      // 生成桌面大表格
+    // 3. 畫面元素渲染
+    function setupInterface() {
       const tbody = document.getElementById('table-body');
-      tbody.innerHTML = ITEMS.map((item, rowIdx) => `
+      tbody.innerHTML = SCORE_ITEMS.map((item, rIdx) => `
         <tr class="print-row-h hover:bg-slate-50/50">
-          <td class="p-1 text-left font-medium leading-tight">${item.title}</td>
+          <td class="p-1 text-left font-medium leading-tight">${item.text}</td>
           <td class="font-bold text-slate-600 bg-slate-50/80">${item.weight}</td>
-          ${DAYS.map((_, dayIdx) => `
+          ${WEEK_DAYS.map((_, dIdx) => `
             <td class="p-0 border border-slate-700">
-              <input type="number" min="0" data-row="${rowIdx}" data-day="${dayIdx}" class="input-t w-full h-full text-center py-1 font-semibold focus:bg-blue-50 focus:outline-none" placeholder="·">
+              <input type="number" min="0" data-row="${rIdx}" data-day="${dIdx}" class="input-t w-full h-full text-center py-1 font-semibold focus:bg-blue-50 focus:outline-none" placeholder="·">
             </td>
-            <td class="p-0 border border-slate-700 bg-slate-50/40 text-blue-700 font-bold" id="cell-p-${rowIdx}-${dayIdx}">-</td>
+            <td class="p-0 border border-slate-700 bg-slate-50/40 text-blue-700 font-bold" id="cell-p-${rIdx}-${dIdx}">-</td>
           `).join('')}
-          <td class="font-extrabold text-slate-800 bg-slate-100" id="row-sum-${rowIdx}">0</td>
+          <td class="font-extrabold text-slate-800 bg-slate-100" id="row-sum-${rIdx}">0</td>
         </tr>
       `).join('');
 
-      // 生成手機 Tabs
-      const tabsContainer = document.getElementById('day-tabs');
-      tabsContainer.innerHTML = DAYS.map((day, idx) => `
-        <button type="button" class="day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap touch-manipulation ${idx === activeDayIndex ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}" data-day="${idx}">
-          ${day}
+      const tabsBox = document.getElementById('day-tabs');
+      tabsBox.innerHTML = WEEK_DAYS.map((dName, idx) => `
+        <button type="button" class="day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap ${idx === selectedDay ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}" data-day="${idx}">
+          ${dName}
         </button>
       `).join('');
 
-      renderMobileCards();
-      bindEvents();
+      renderDayCards();
+      attachListeners();
     }
 
-    function renderMobileCards() {
-      const wrapper = document.getElementById('day-cards-wrapper');
-      wrapper.innerHTML = ITEMS.map((item, rowIdx) => {
-        const val = formData.t[rowIdx][activeDayIndex] || 0;
-        const pVal = val * item.weight;
+    function renderDayCards() {
+      const cardBox = document.getElementById('day-cards-wrapper');
+      cardBox.innerHTML = SCORE_ITEMS.map((item, rIdx) => {
+        const qty = parseFloat(reportState.t[rIdx][selectedDay]) || 0;
+        const pts = qty * item.weight;
         return `
           <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between gap-2">
             <div class="flex-1">
-              <div class="text-xs font-bold text-slate-800 leading-snug">${item.title.replace('<br>', ' ')}</div>
-              <div class="text-[11px] text-slate-500 mt-0.5">每件 ${item.weight} 分 ➔ 得 <span class="font-bold text-blue-600 text-xs" id="mobile-p-${rowIdx}">${pVal}</span> 分</div>
+              <div class="text-xs font-bold text-slate-800 leading-snug">${item.text.replace('<br>', ' ')}</div>
+              <div class="text-[11px] text-slate-500 mt-0.5">每件 ${item.weight} 分 ➔ 得 <span class="font-bold text-blue-600 text-xs" id="mobile-p-${rIdx}">${pts}</span> 分</div>
             </div>
             <div class="flex items-center gap-1">
-              <button type="button" class="btn-step w-9 h-9 rounded bg-white border border-slate-300 font-bold text-slate-600 active:bg-slate-200 flex items-center justify-center text-lg touch-manipulation cursor-pointer" data-row="${rowIdx}" data-delta="-1">-</button>
-              <input type="number" min="0" value="${val || ''}" data-row="${rowIdx}" class="input-t-mobile w-12 h-9 text-center font-bold text-base bg-white border border-slate-300 rounded focus:border-blue-500 focus:outline-none" placeholder="0">
-              <button type="button" class="btn-step w-9 h-9 rounded bg-blue-600 text-white font-bold active:bg-blue-700 flex items-center justify-center text-lg touch-manipulation cursor-pointer" data-row="${rowIdx}" data-delta="1">+</button>
+              <button type="button" class="btn-step w-9 h-9 rounded bg-white border border-slate-300 font-bold text-slate-600 active:bg-slate-200 flex items-center justify-center text-lg select-none" data-row="${rIdx}" data-delta="-1">-</button>
+              <input type="number" min="0" value="${qty || ''}" data-row="${rIdx}" class="input-t-mobile w-12 h-9 text-center font-bold text-base bg-white border border-slate-300 rounded focus:border-blue-500 focus:outline-none" placeholder="0">
+              <button type="button" class="btn-step w-9 h-9 rounded bg-blue-600 text-white font-bold active:bg-blue-700 flex items-center justify-center text-lg select-none" data-row="${rIdx}" data-delta="1">+</button>
             </div>
           </div>
         `;
       }).join('');
     }
 
-    // ==========================================
-    // 4. 計算核心
-    // ==========================================
-    function calculate() {
-      let daySums = Array(7).fill(0);
-      let grandTotal = 0;
+    // 4. 計算加總
+    function recalculateScores() {
+      let dailyTotals = Array(7).fill(0);
+      let weeklyTotal = 0;
 
-      ITEMS.forEach((item, rowIdx) => {
-        let rowSum = 0;
+      SCORE_ITEMS.forEach((item, rIdx) => {
+        let rTotal = 0;
         for (let d = 0; d < 7; d++) {
-          const tVal = parseFloat(formData.t[rowIdx][d]) || 0;
-          const pVal = tVal * item.weight;
-          
-          const pCell = document.getElementById(`cell-p-${rowIdx}-${d}`);
-          if (pCell) pCell.textContent = tVal > 0 ? pVal : '-';
+          const val = parseFloat(reportState.t[rIdx][d]) || 0;
+          const score = val * item.weight;
 
-          const mobileP = document.getElementById(`mobile-p-${rowIdx}`);
-          if (mobileP && d === activeDayIndex) mobileP.textContent = pVal;
+          const pBox = document.getElementById(`cell-p-${rIdx}-${d}`);
+          if (pBox) pBox.textContent = val > 0 ? score : '-';
 
-          rowSum += pVal;
-          daySums[d] += pVal;
+          const mobP = document.getElementById(`mobile-p-${rIdx}`);
+          if (mobP && d === selectedDay) mobP.textContent = score;
+
+          rTotal += score;
+          dailyTotals[d] += score;
         }
-        const rowSumElem = document.getElementById(`row-sum-${rowIdx}`);
-        if (rowSumElem) rowSumElem.textContent = rowSum;
-        grandTotal += rowSum;
+        const rSumElem = document.getElementById(`row-sum-${rIdx}`);
+        if (rSumElem) rSumElem.textContent = rTotal;
+        weeklyTotal += rTotal;
       });
 
       for (let d = 0; d < 7; d++) {
-        const colSumElem = document.getElementById(`col-p-sum-${d}`);
-        if (colSumElem) colSumElem.textContent = daySums[d];
+        const dSumElem = document.getElementById(`col-p-sum-${d}`);
+        if (dSumElem) dSumElem.textContent = dailyTotals[d];
       }
 
-      document.getElementById('grand-total').textContent = grandTotal;
+      document.getElementById('grand-total').textContent = weeklyTotal;
     }
 
-    // ==========================================
-    // 5. 雲端同步與自動儲存
-    // ==========================================
-    function setSyncStatus(text, colorClass) {
-      const status = document.getElementById('sync-status');
-      if (status) status.textContent = text;
+    // 5. 雲端讀寫處理
+    function updateSyncIndicator(msg) {
+      const elem = document.getElementById('sync-status');
+      if (elem) elem.textContent = msg;
     }
 
-    async function saveToCloud() {
-      setSyncStatus('同步中...');
+    async function syncToDatabase() {
+      if (!activeMember) {
+        updateSyncIndicator('請輸入姓名');
+        return;
+      }
+      updateSyncIndicator('同步中...');
+      const localKey = `20_100_${activeMember}_${targetWeek}`;
+      localStorage.setItem(localKey, JSON.stringify(reportState));
 
-      // 備份到本地 localStorage
-      localStorage.setItem(`20_100_${currentMember}_${currentWeekId}`, JSON.stringify(formData));
-
-      if (db) {
+      if (cloudDb) {
         try {
-          const docRef = db.collection("weekly_reports").doc(`${currentMember}_${currentWeekId}`);
-          await docRef.set({
-            member: currentMember,
-            week: currentWeekId,
-            data: formData,
+          const docId = `${activeMember}_${targetWeek}`;
+          await cloudDb.collection("weekly_reports").doc(docId).set({
+            member: activeMember,
+            week: targetWeek,
+            data: reportState,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
           });
-          setSyncStatus('已同步雲端');
-        } catch (err) {
-          console.error("雲端存檔失敗:", err);
-          setSyncStatus('本機儲存 (離線)');
+          updateSyncIndicator('已同步雲端');
+        } catch (e) {
+          console.error("寫入雲端失敗:", e);
+          updateSyncIndicator('本機儲存 (離線)');
         }
       } else {
-        setSyncStatus('本機儲存');
+        updateSyncIndicator('本機儲存');
       }
     }
 
-    function triggerAutoSave() {
-      clearTimeout(debounceTimer);
-      setSyncStatus('編輯中...');
-      debounceTimer = setTimeout(saveToCloud, 800);
+    function queueSync() {
+      clearTimeout(syncTimer);
+      updateSyncIndicator('編輯中...');
+      syncTimer = setTimeout(syncToDatabase, 800);
     }
 
-    async function loadData() {
-      setSyncStatus('載入中...');
-      let loaded = false;
+    async function retrieveData() {
+      if (!activeMember) {
+        updateSyncIndicator('未指定成員');
+        return;
+      }
+      updateSyncIndicator('載入中...');
+      let isFetched = false;
 
-      if (db) {
+      if (cloudDb) {
         try {
-          const docRef = db.collection("weekly_reports").doc(`${currentMember}_${currentWeekId}`);
-          const doc = await docRef.get();
-          if (doc.exists) {
-            formData = doc.data().data;
-            loaded = true;
-            setSyncStatus('已同步雲端');
+          const docId = `${activeMember}_${targetWeek}`;
+          const snapshot = await cloudDb.collection("weekly_reports").doc(docId).get();
+          if (snapshot.exists) {
+            reportState = snapshot.data().data;
+            isFetched = true;
+            updateSyncIndicator('已同步雲端');
           }
-        } catch (e) {
-          console.warn("無法自雲端讀取，改讀本地端備份", e);
+        } catch (err) {
+          console.warn("無法取得遠端資料:", err);
         }
       }
 
-      if (!loaded) {
-        const local = localStorage.getItem(`20_100_${currentMember}_${currentWeekId}`);
-        if (local) {
-          formData = JSON.parse(local);
-          setSyncStatus('讀取本機紀錄');
+      if (!isFetched) {
+        const cached = localStorage.getItem(`20_100_${activeMember}_${targetWeek}`);
+        if (cached) {
+          reportState = JSON.parse(cached);
+          updateSyncIndicator('讀取本機紀錄');
         } else {
-          // 全新空白
-          formData = {
-            t: Array.from({length: 6}, () => Array(7).fill("")),
-            dateStart: "", dateEnd: "", stats: {}, notes: {}
+          reportState = {
+            t: Array.from({ length: 6 }, () => Array(7).fill("")),
+            dateStart: "",
+            dateEnd: "",
+            stats: {},
+            notes: {}
           };
-          setSyncStatus('本週全新表單');
+          updateSyncIndicator('本週全新表單');
         }
       }
 
       // 填回表單
-      document.querySelectorAll('.input-t').forEach(input => {
-        const r = input.dataset.row;
-        const d = input.dataset.day;
-        input.value = (formData.t && formData.t[r] && formData.t[r][d]) || "";
+      document.querySelectorAll('.input-t').forEach(el => {
+        const r = el.dataset.row;
+        const d = el.dataset.day;
+        el.value = (reportState.t && reportState.t[r] && reportState.t[r][d]) || "";
       });
-      document.getElementById('date-start').value = formData.dateStart || "";
-      document.getElementById('date-end').value = formData.dateEnd || "";
+      document.getElementById('date-start').value = reportState.dateStart || "";
+      document.getElementById('date-end').value = reportState.dateEnd || "";
 
-      ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(id => {
-        document.getElementById(`stat-${id}`).value = (formData.stats && formData.stats[id]) || "";
+      ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(k => {
+        const f = document.getElementById(`stat-${k}`);
+        if (f) f.value = (reportState.stats && reportState.stats[k]) || "";
       });
 
       for (let i = 0; i < 2; i++) {
         ['prop', 'dev', 'event', 'todo'].forEach(sec => {
-          document.getElementById(`notes-${sec}-${i}`).value = (formData.notes && formData.notes[`${sec}-${i}`]) || "";
+          const field = document.getElementById(`notes-${sec}-${i}`);
+          if (field) field.value = (reportState.notes && reportState.notes[`${sec}-${i}`]) || "";
         });
       }
 
-      renderMobileCards();
-      calculate();
+      renderDayCards();
+      recalculateScores();
     }
 
-    // ==========================================
-    // 6. 事件綁定
-    // ==========================================
-    function bindEvents() {
-      // 桌面大表 T 輸入
+    // 6. 互動與按鍵綁定
+    function attachListeners() {
       document.getElementById('table-body').addEventListener('input', (e) => {
         if (e.target.classList.contains('input-t')) {
           const r = e.target.dataset.row;
           const d = e.target.dataset.day;
-          formData.t[r][d] = e.target.value;
-          calculate();
-          triggerAutoSave();
+          reportState.t[r][d] = e.target.value;
+          recalculateScores();
+          queueSync();
         }
       });
 
-      // 手機卡片點擊與輸入
       document.getElementById('day-cards-wrapper').addEventListener('click', (e) => {
         const btn = e.target.closest('.btn-step');
         if (btn) {
           const r = btn.dataset.row;
-          const delta = parseInt(btn.dataset.delta);
-          let current = parseInt(formData.t[r][activeDayIndex]) || 0;
-          current = Math.max(0, current + delta);
-          formData.t[r][activeDayIndex] = current > 0 ? current : "";
-          
-          // 連動大表與卡片
-          const inputDesk = document.querySelector(`.input-t[data-row="${r}"][data-day="${activeDayIndex}"]`);
-          if (inputDesk) inputDesk.value = formData.t[r][activeDayIndex];
-          const inputMob = document.querySelector(`.input-t-mobile[data-row="${r}"]`);
-          if (inputMob) inputMob.value = formData.t[r][activeDayIndex];
+          const delta = parseInt(btn.dataset.delta, 10);
+          let val = parseInt(reportState.t[r][selectedDay], 10) || 0;
+          val = Math.max(0, val + delta);
+          reportState.t[r][selectedDay] = val > 0 ? val : "";
 
-          calculate();
-          triggerAutoSave();
+          const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
+          if (deskInp) deskInp.value = reportState.t[r][selectedDay];
+          const mobInp = document.querySelector(`.input-t-mobile[data-row="${r}"]`);
+          if (mobInp) mobInp.value = reportState.t[r][selectedDay];
+
+          recalculateScores();
+          queueSync();
         }
       });
 
       document.getElementById('day-cards-wrapper').addEventListener('input', (e) => {
         if (e.target.classList.contains('input-t-mobile')) {
           const r = e.target.dataset.row;
-          formData.t[r][activeDayIndex] = e.target.value;
-          const inputDesk = document.querySelector(`.input-t[data-row="${r}"][data-day="${activeDayIndex}"]`);
-          if (inputDesk) inputDesk.value = e.target.value;
-          calculate();
-          triggerAutoSave();
+          reportState.t[r][selectedDay] = e.target.value;
+          const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
+          if (deskInp) deskInp.value = e.target.value;
+          recalculateScores();
+          queueSync();
         }
       });
 
-      // 手機切換星期 Tabs
       document.getElementById('day-tabs').addEventListener('click', (e) => {
-        const btn = e.target.closest('.day-tab-btn');
-        if (btn) {
-          activeDayIndex = parseInt(btn.dataset.day);
+        const tab = e.target.closest('.day-tab-btn');
+        if (tab) {
+          selectedDay = parseInt(tab.dataset.day, 10);
           document.querySelectorAll('.day-tab-btn').forEach((b, i) => {
-            if (i === activeDayIndex) {
-              b.className = 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-blue-600 text-white border-blue-600 touch-manipulation';
-            } else {
-              b.className = 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-white text-slate-600 border-slate-200 touch-manipulation';
-            }
+            b.className = i === selectedDay
+              ? 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-blue-600 text-white border-blue-600'
+              : 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-white text-slate-600 border-slate-200';
           });
-          renderMobileCards();
+          renderDayCards();
         }
       });
 
-      // 執行切換成員載入的共用函式
-      const handleMemberSwitch = () => {
-        const val = document.getElementById('member-id-input').value.trim();
-        if (val) {
-          currentMember = val;
-          localStorage.setItem('score_tracker_member', currentMember);
-          document.getElementById('member-id-input').blur(); // 載入後自動收起手機虛擬鍵盤
-          loadData();
+      const handleMemberAction = () => {
+        const inputVal = document.getElementById('member-id-input').value.trim();
+        if (inputVal) {
+          activeMember = inputVal;
+          localStorage.setItem('score_tracker_member', activeMember);
+          document.getElementById('member-id-input').blur();
+          retrieveData();
         }
       };
 
-      // 點擊載入按鈕
-      document.getElementById('btn-switch-member').addEventListener('click', handleMemberSwitch);
-
-      // 手機鍵盤按下「前往 / 完成 / Enter」直接載入
+      document.getElementById('btn-switch-member').addEventListener('click', handleMemberAction);
       document.getElementById('member-id-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') {
-          handleMemberSwitch();
-        }
+        if (e.key === 'Enter') handleMemberAction();
       });
 
-      // 手機視角切換 (卡片 / 大表)
       document.getElementById('btn-toggle-view').addEventListener('click', () => {
-        const focusSec = document.getElementById('mobile-focus-section');
-        const deskTable = document.getElementById('desktop-table-wrapper');
-        const txt = document.getElementById('toggle-view-text');
-        if (focusSec.classList.contains('hidden')) {
-          focusSec.classList.remove('hidden');
-          deskTable.classList.add('hidden');
-          txt.textContent = '📊 全週大表';
+        const focusCard = document.getElementById('mobile-focus-section');
+        const matrixTable = document.getElementById('desktop-table-wrapper');
+        const viewText = document.getElementById('toggle-view-text');
+        if (focusCard.classList.contains('hidden')) {
+          focusCard.classList.remove('hidden');
+          matrixTable.classList.add('hidden');
+          viewText.textContent = '📊 全週大表';
         } else {
-          focusSec.classList.add('hidden');
-          deskTable.classList.remove('hidden');
-          txt.textContent = '📱 每日卡片';
+          focusCard.classList.add('hidden');
+          matrixTable.classList.remove('hidden');
+          viewText.textContent = '📱 每日卡片';
         }
       });
 
-      // 其餘欄位輸入儲存
       ['date-start', 'date-end'].forEach(id => {
         document.getElementById(id).addEventListener('input', (e) => {
-          if (id === 'date-start') formData.dateStart = e.target.value;
-          if (id === 'date-end') formData.dateEnd = e.target.value;
-          triggerAutoSave();
+          if (id === 'date-start') reportState.dateStart = e.target.value;
+          if (id === 'date-end') reportState.dateEnd = e.target.value;
+          queueSync();
         });
       });
 
-      ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(id => {
-        document.getElementById(`stat-${id}`).addEventListener('input', (e) => {
-          formData.stats[id] = e.target.value;
-          triggerAutoSave();
+      ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(k => {
+        document.getElementById(`stat-${k}`).addEventListener('input', (e) => {
+          reportState.stats[k] = e.target.value;
+          queueSync();
         });
       });
 
       for (let i = 0; i < 2; i++) {
         ['prop', 'dev', 'event', 'todo'].forEach(sec => {
           document.getElementById(`notes-${sec}-${i}`).addEventListener('input', (e) => {
-            formData.notes[`${sec}-${i}`] = e.target.value;
-            triggerAutoSave();
+            reportState.notes[`${sec}-${i}`] = e.target.value;
+            queueSync();
           });
         });
       }
 
-      // 列印與一鍵清零
       document.getElementById('btn-print').addEventListener('click', () => window.print());
       document.getElementById('btn-clear').addEventListener('click', () => {
-        if (confirm(`確定要清空成員【${currentMember}】本週 (${currentWeekId}) 的所有紀錄嗎？`)) {
-          formData = {
-            t: Array.from({length: 6}, () => Array(7).fill("")),
-            dateStart: "", dateEnd: "", stats: {}, notes: {}
+        if (confirm(`確定要清空【${activeMember || '當前紀錄'}】本週的所有輸入數據嗎？`)) {
+          reportState = {
+            t: Array.from({ length: 6 }, () => Array(7).fill("")),
+            dateStart: "",
+            dateEnd: "",
+            stats: {},
+            notes: {}
           };
-          saveToCloud();
-          loadData();
+          syncToDatabase();
+          retrieveData();
         }
       });
     }
 
-    // 啟動
-    initUI();
-    loadData();
+    // 啟動入口
+    setupInterface();
+    if (activeMember) {
+      retrieveData();
+    }
   </script>
 </body>
 </html>
