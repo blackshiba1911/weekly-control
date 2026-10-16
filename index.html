@@ -441,23 +441,38 @@
       if (elem) elem.textContent = msg;
     }
 
-    // 避開 Firestore 不支援 Nested Arrays 限制
+// 項目簡稱與星期名稱定義（用於 Firestore 易讀標籤）
+    const ITEM_KEYS = [
+      "接觸約訪",
+      "會談機會",
+      "咨詢資料",
+      "建議書面談",
+      "簽要保書",
+      "受理報聘"
+    ];
+
+    // 壓平轉為易讀中文物件
     function serializeGrid(arr) {
       let obj = {};
       for (let r = 0; r < 6; r++) {
         for (let d = 0; d < 7; d++) {
-          obj[`r${r}_d${d}`] = (arr && arr[r] && arr[r][d]) || "";
+          const key = `${ITEM_KEYS[r]}_${WEEK_DAYS[d]}`;
+          obj[key] = (arr && arr[r] && arr[r][d]) || "";
         }
       }
       return obj;
     }
 
+    // 將易讀中文物件還原回 6x7 矩陣（相容舊版 r0_d0 格式）
     function deserializeGrid(obj) {
       let arr = Array.from({ length: 6 }, () => Array(7).fill(""));
       if (!obj) return arr;
       for (let r = 0; r < 6; r++) {
         for (let d = 0; d < 7; d++) {
-          arr[r][d] = obj[`r${r}_d${d}`] || "";
+          const newKey = `${ITEM_KEYS[r]}_${WEEK_DAYS[d]}`;
+          const oldKey = `r${r}_d${d}`;
+          // 優先讀取中文 Key，若無則讀取舊版相容 Key
+          arr[r][d] = obj[newKey] !== undefined ? obj[newKey] : (obj[oldKey] || "");
         }
       }
       return arr;
