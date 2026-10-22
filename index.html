@@ -107,13 +107,16 @@
           </button>
         </div>
 
-        <!-- 週次下拉選單 -->
-        <div class="flex items-center gap-1">
-          <label class="text-xs font-bold text-slate-500 whitespace-nowrap">週次</label>
-          <select id="week-select" class="px-2 py-1 text-xs sm:text-sm font-semibold border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            <!-- JS 動態生成歷史週次 -->
-          </select>
-        </div>
+        <!-- 年份與週次下拉選單 -->
+<div class="flex items-center gap-1">
+  <label class="text-xs font-bold text-slate-500 whitespace-nowrap">時間</label>
+  <!-- 年份選擇 -->
+  <select id="year-select" class="px-1.5 py-1 text-xs sm:text-sm font-semibold border border-slate-300 rounded bg-white text-slate-800 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+  </select>
+  <!-- 週次選擇 (第 01 ~ 52/53 週) -->
+  <select id="week-select" class="px-2 py-1 text-xs sm:text-sm font-semibold border border-slate-300 rounded bg-white text-slate-800 cursor-pointer focus:ring-2 focus:ring-blue-500 focus:outline-none">
+  </select>
+</div>
 
         <!-- 狀態徽章 -->
         <div class="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-slate-50 border border-slate-200 shrink-0" id="sync-badge">
@@ -336,55 +339,113 @@
     ];
     const WEEK_DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
 
-    // 取得指定日期對應的 ISO 週次
-    function getISOWeekString(date) {
-      const d = new Date(date.getTime());
-      d.setHours(0, 0, 0, 0);
-      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
-      const jan4 = new Date(d.getFullYear(), 0, 4);
-      const diff = (d.getTime() - jan4.getTime()) / 86400000;
-      const weekNum = 1 + Math.round((diff - 3 + (jan4.getDay() + 6) % 7) / 7);
-      return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+    // 取得指定年份共有幾週 (ISO 8601 標準下通常為 52 週，少數年份為 53 週)
+    function getWeeksInISOYear(year) {
+      const p = (year + Math.floor(year / 4) - Math.floor(year / 100) + Math.floor(year / 400)) % 7;
+      const lastYearP = ((year - 1) + Math.floor((year - 1) / 4) - Math.floor((year - 1) / 100) + Math.floor((year - 1) / 400)) % 7;
+      return (p === 4 || lastYearP === 3) ? 53 : 52;
     }
 
-    // 當前實際週次
-    const currentRealWeek = getISOWeekString(new Date());
-    // 目標週次（可自由切換，預設為本週）
-    let targetWeek = currentRealWeek;
+    // 計算指定年與週次週一的日期 (用於在選單旁顯示日期範圍，例如: 10/12~10/18)
+    function getWeekRangeText(year, week) {
+      const simple = new Date(year, 0, 1 + (week - 1) * 7);
+      const dow = simple.getDay();
+      const isoMon = new Date(simple);
+      if (dow <= 4) {
+        isoMon.setDate(simple.getDate() - simple.getDay() + 1);
+      } else {
+        isoMon.setDate(simple.getDate() + 8 - simple.getDay());
+      }
+      const isoSun = new Date(isoMon);
+      isoSun.setDate(isoMon.getDate() + 6);
 
-    // 初始化週次選單（包含本週、前 7 週、下 1 週）
+      const formatMDate = (d) => `${d.getMonth() + 1}/${d.getDate()}`;
+      return `${formatMDate(isoMon)} ~ ${formatMDate(isoSun)}`;
+    }
+
+    // 當前實際年與週
+    const nowTime = new Date();
+    const currentRealWeekStr = getISOWeekString(nowTime); // 例如: 2026-W42
+    const currentYear = parseInt(currentRealWeekStr.split('-W')[0], 10);
+    const currentWeekNum = parseInt(currentRealWeekStr.split('-W')[1], 10);
+
+    let selectedYear = currentYear;
+    let selectedWeekNum = currentWeekNum;
+    let targetWeek = currentRealWeekStr; // 組合出 2026-W42
+
+    // 初始化年份與週次選單
     function setupWeekDropdown() {
-      const select = document.getElementById('week-select');
-      if (!select) return;
-      select.innerHTML = '';
-      
-      const today = new Date();
-      for (let i = 1; i >= -7; i--) {
-        const d = new Date(today.getTime() + i * 7 * 86400000);
-        const wStr = getISOWeekString(d);
+      const yearSelect = document.getElementById('year-select');
+      const weekSelect = document.getElementById('week-select');
+      if (!yearSelect || !weekSelect) return;
+
+      // 1. 生成年份選項 (前後支援：建置年份 2025、當前年份、未來 1 年)
+      yearSelect.innerHTML = '';
+      const startYear = 2025; // 系統起始年份
+      const endYear = currentYear + 1; // 支援到隔年
+      for (let y = endYear; y >= startYear; y--) {
         const opt = document.createElement('option');
-        opt.value = wStr;
-        if (wStr === currentRealWeek) {
-          opt.textContent = `${wStr} (本週)`;
-          opt.selected = true;
-        } else if (i === 1) {
-          opt.textContent = `${wStr} (下週)`;
-        } else {
-          opt.textContent = `${wStr} (過去第 ${Math.abs(i)} 週)`;
-        }
-        select.appendChild(opt);
+        opt.value = y;
+        opt.textContent = `${y} 年`;
+        if (y === selectedYear) opt.selected = true;
+        yearSelect.appendChild(opt);
       }
 
-      const displayElem = document.getElementById('week-display');
-      if (displayElem) displayElem.textContent = targetWeek;
+      // 2. 根據年份生成對應的所有週次 (1 ~ 52 或 53 週)
+      function populateWeeks(year) {
+        weekSelect.innerHTML = '';
+        const totalWeeks = getWeeksInISOYear(year);
 
-      select.addEventListener('change', (e) => {
+        for (let w = 1; w <= totalWeeks; w++) {
+          const wStr = String(w).padStart(2, '0');
+          const fullWeekId = `${year}-W${wStr}`;
+          const dateRange = getWeekRangeText(year, w);
+
+          const opt = document.createElement('option');
+          opt.value = fullWeekId;
+
+          // 標註「本週」供快速識別
+          if (fullWeekId === currentRealWeekStr) {
+            opt.textContent = `W${wStr} (${dateRange}) [本週]`;
+            opt.selected = true;
+          } else {
+            opt.textContent = `W${wStr} (${dateRange})`;
+            if (w === selectedWeekNum && year === selectedYear) {
+              opt.selected = true;
+            }
+          }
+          weekSelect.appendChild(opt);
+        }
+      }
+
+      populateWeeks(selectedYear);
+      updateDisplayAndData();
+
+      // 年份切換事件
+      yearSelect.addEventListener('change', (e) => {
+        selectedYear = parseInt(e.target.value, 10);
+        // 若切換到當前年份，自動回到當週，其他年份則預設第 1 週
+        selectedWeekNum = (selectedYear === currentYear) ? currentWeekNum : 1;
+        populateWeeks(selectedYear);
+        updateDisplayAndData();
+      });
+
+      // 週次切換事件
+      weekSelect.addEventListener('change', (e) => {
         targetWeek = e.target.value;
+        selectedWeekNum = parseInt(targetWeek.split('-W')[1], 10);
+        updateDisplayAndData();
+      });
+
+      function updateDisplayAndData() {
+        targetWeek = weekSelect.value;
+        const displayElem = document.getElementById('week-display');
         if (displayElem) displayElem.textContent = targetWeek;
+        // 切換後自動重新從雲端/本地載入該週資料
         if (activeMember) {
           retrieveData();
         }
-      });
+      }
     }
 
     // 預設為空白，讓使用者自行輸入
