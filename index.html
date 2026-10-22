@@ -338,15 +338,25 @@
       { id: 5, text: "M受理/新人報聘", weight: 5 }
     ];
     const WEEK_DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
+    const CHINESE_ITEMS = ["接觸約訪", "會談機會", "咨詢資料", "建議書面談", "簽要保書", "受理報聘"];
 
-    // 取得指定年份共有幾週 (ISO 8601 標準下通常為 52 週，少數年份為 53 週)
+    // 3. 週次核心計算函式（必須最先宣告，避免 ReferenceError）
+    function getISOWeekString(date) {
+      const d = new Date(date.getTime());
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+      const jan4 = new Date(d.getFullYear(), 0, 4);
+      const diff = (d.getTime() - jan4.getTime()) / 86400000;
+      const weekNum = 1 + Math.round((diff - 3 + (jan4.getDay() + 6) % 7) / 7);
+      return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+    }
+
     function getWeeksInISOYear(year) {
       const p = (year + Math.floor(year / 4) - Math.floor(year / 100) + Math.floor(year / 400)) % 7;
       const lastYearP = ((year - 1) + Math.floor((year - 1) / 4) - Math.floor((year - 1) / 100) + Math.floor((year - 1) / 400)) % 7;
       return (p === 4 || lastYearP === 3) ? 53 : 52;
     }
 
-    // 計算指定年與週次週一的日期 (用於在選單旁顯示日期範圍，例如: 10/12~10/18)
     function getWeekRangeText(year, week) {
       const simple = new Date(year, 0, 1 + (week - 1) * 7);
       const dow = simple.getDay();
@@ -363,26 +373,37 @@
       return `${formatMDate(isoMon)} ~ ${formatMDate(isoSun)}`;
     }
 
-    // 當前實際年與週
+    // 計算當前真實時間與預設目標
     const nowTime = new Date();
-    const currentRealWeekStr = getISOWeekString(nowTime); // 例如: 2026-W42
+    const currentRealWeekStr = getISOWeekString(nowTime);
     const currentYear = parseInt(currentRealWeekStr.split('-W')[0], 10);
     const currentWeekNum = parseInt(currentRealWeekStr.split('-W')[1], 10);
 
     let selectedYear = currentYear;
     let selectedWeekNum = currentWeekNum;
-    let targetWeek = currentRealWeekStr; // 組合出 2026-W42
+    let targetWeek = currentRealWeekStr;
 
-    // 初始化年份與週次選單
+    let activeMember = localStorage.getItem('score_tracker_member') || '';
+    let selectedDay = (new Date().getDay() + 6) % 7;
+    let reportState = {
+      t: Array.from({ length: 6 }, () => Array(7).fill("")),
+      dateStart: "",
+      dateEnd: "",
+      stats: {},
+      notes: {}
+    };
+
+    let syncTimer = null;
+
+    // 4. 初始化年份與週次選單
     function setupWeekDropdown() {
       const yearSelect = document.getElementById('year-select');
       const weekSelect = document.getElementById('week-select');
       if (!yearSelect || !weekSelect) return;
 
-      // 1. 生成年份選項 (前後支援：建置年份 2025、當前年份、未來 1 年)
       yearSelect.innerHTML = '';
-      const startYear = 2025; // 系統起始年份
-      const endYear = currentYear + 1; // 支援到隔年
+      const startYear = 2025;
+      const endYear = currentYear + 1;
       for (let y = endYear; y >= startYear; y--) {
         const opt = document.createElement('option');
         opt.value = y;
@@ -391,7 +412,6 @@
         yearSelect.appendChild(opt);
       }
 
-      // 2. 根據年份生成對應的所有週次 (1 ~ 52 或 53 週)
       function populateWeeks(year) {
         weekSelect.innerHTML = '';
         const totalWeeks = getWeeksInISOYear(year);
@@ -404,7 +424,6 @@
           const opt = document.createElement('option');
           opt.value = fullWeekId;
 
-          // 標註「本週」供快速識別
           if (fullWeekId === currentRealWeekStr) {
             opt.textContent = `W${wStr} (${dateRange}) [本週]`;
             opt.selected = true;
@@ -421,16 +440,13 @@
       populateWeeks(selectedYear);
       updateDisplayAndData();
 
-      // 年份切換事件
       yearSelect.addEventListener('change', (e) => {
         selectedYear = parseInt(e.target.value, 10);
-        // 若切換到當前年份，自動回到當週，其他年份則預設第 1 週
         selectedWeekNum = (selectedYear === currentYear) ? currentWeekNum : 1;
         populateWeeks(selectedYear);
         updateDisplayAndData();
       });
 
-      // 週次切換事件
       weekSelect.addEventListener('change', (e) => {
         targetWeek = e.target.value;
         selectedWeekNum = parseInt(targetWeek.split('-W')[1], 10);
@@ -441,51 +457,42 @@
         targetWeek = weekSelect.value;
         const displayElem = document.getElementById('week-display');
         if (displayElem) displayElem.textContent = targetWeek;
-        // 切換後自動重新從雲端/本地載入該週資料
         if (activeMember) {
           retrieveData();
         }
       }
     }
 
-    // 預設為空白，讓使用者自行輸入
-    let activeMember = localStorage.getItem('score_tracker_member') || '';
-    document.getElementById('member-id-input').value = activeMember;
-
-    let selectedDay = (new Date().getDay() + 6) % 7;
-    let reportState = {
-      t: Array.from({ length: 6 }, () => Array(7).fill("")),
-      dateStart: "",
-      dateEnd: "",
-      stats: {},
-      notes: {}
-    };
-
-    let syncTimer = null;
-
-    // 3. 畫面元素渲染
+    // 5. 畫面渲染
     function setupInterface() {
+      const memberInput = document.getElementById('member-id-input');
+      if (memberInput) memberInput.value = activeMember;
+
       const tbody = document.getElementById('table-body');
-      tbody.innerHTML = SCORE_ITEMS.map((item, rIdx) => `
-        <tr class="print-row-h hover:bg-slate-50/50">
-          <td class="p-1 text-left font-medium leading-tight">${item.text}</td>
-          <td class="font-bold text-slate-600 bg-slate-50/80">${item.weight}</td>
-          ${WEEK_DAYS.map((_, dIdx) => `
-            <td class="p-0 border border-slate-700">
-              <input type="number" min="0" data-row="${rIdx}" data-day="${dIdx}" class="input-t w-full h-full text-center py-1 font-semibold focus:bg-blue-50 focus:outline-none" placeholder="·">
-            </td>
-            <td class="p-0 border border-slate-700 bg-slate-50/40 text-blue-700 font-bold" id="cell-p-${rIdx}-${dIdx}">-</td>
-          `).join('')}
-          <td class="font-extrabold text-slate-800 bg-slate-100" id="row-sum-${rIdx}">0</td>
-        </tr>
-      `).join('');
+      if (tbody) {
+        tbody.innerHTML = SCORE_ITEMS.map((item, rIdx) => `
+          <tr class="print-row-h hover:bg-slate-50/50">
+            <td class="p-1 text-left font-medium leading-tight">${item.text}</td>
+            <td class="font-bold text-slate-600 bg-slate-50/80">${item.weight}</td>
+            ${WEEK_DAYS.map((_, dIdx) => `
+              <td class="p-0 border border-slate-700">
+                <input type="number" min="0" data-row="${rIdx}" data-day="${dIdx}" class="input-t w-full h-full text-center py-1 font-semibold focus:bg-blue-50 focus:outline-none" placeholder="·">
+              </td>
+              <td class="p-0 border border-slate-700 bg-slate-50/40 text-blue-700 font-bold" id="cell-p-${rIdx}-${dIdx}">-</td>
+            `).join('')}
+            <td class="font-extrabold text-slate-800 bg-slate-100" id="row-sum-${rIdx}">0</td>
+          </tr>
+        `).join('');
+      }
 
       const tabsBox = document.getElementById('day-tabs');
-      tabsBox.innerHTML = WEEK_DAYS.map((dName, idx) => `
-        <button type="button" class="day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap ${idx === selectedDay ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}" data-day="${idx}">
-          ${dName}
-        </button>
-      `).join('');
+      if (tabsBox) {
+        tabsBox.innerHTML = WEEK_DAYS.map((dName, idx) => `
+          <button type="button" class="day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap ${idx === selectedDay ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-600 border-slate-200'}" data-day="${idx}">
+            ${dName}
+          </button>
+        `).join('');
+      }
 
       renderDayCards();
       attachListeners();
@@ -493,6 +500,7 @@
 
     function renderDayCards() {
       const cardBox = document.getElementById('day-cards-wrapper');
+      if (!cardBox) return;
       cardBox.innerHTML = SCORE_ITEMS.map((item, rIdx) => {
         const qty = parseFloat(reportState.t[rIdx][selectedDay]) || 0;
         const pts = qty * item.weight;
@@ -512,7 +520,7 @@
       }).join('');
     }
 
-    // 4. 計算加總
+    // 6. 分數計算
     function recalculateScores() {
       let dailyTotals = Array(7).fill(0);
       let weeklyTotal = 0;
@@ -542,50 +550,14 @@
         if (dSumElem) dSumElem.textContent = dailyTotals[d];
       }
 
-      document.getElementById('grand-total').textContent = weeklyTotal;
+      const grandElem = document.getElementById('grand-total');
+      if (grandElem) grandElem.textContent = weeklyTotal;
     }
 
-    // 5. 雲端讀寫處理（已包含二維陣列修復邏輯）
+    // 7. 雲端同步與讀寫（含中文鍵名轉換與容錯還原）
     function updateSyncIndicator(msg) {
       const elem = document.getElementById('sync-status');
       if (elem) elem.textContent = msg;
-    }
-
-// 項目簡稱與星期名稱定義（用於 Firestore 易讀標籤）
-    const ITEM_KEYS = [
-      "接觸約訪",
-      "會談機會",
-      "咨詢資料",
-      "建議書面談",
-      "簽要保書",
-      "受理報聘"
-    ];
-
-    // 壓平轉為易讀中文物件
-    function serializeGrid(arr) {
-      let obj = {};
-      for (let r = 0; r < 6; r++) {
-        for (let d = 0; d < 7; d++) {
-          const key = `${ITEM_KEYS[r]}_${WEEK_DAYS[d]}`;
-          obj[key] = (arr && arr[r] && arr[r][d]) || "";
-        }
-      }
-      return obj;
-    }
-
-    // 將易讀中文物件還原回 6x7 矩陣（相容舊版 r0_d0 格式）
-    function deserializeGrid(obj) {
-      let arr = Array.from({ length: 6 }, () => Array(7).fill(""));
-      if (!obj) return arr;
-      for (let r = 0; r < 6; r++) {
-        for (let d = 0; d < 7; d++) {
-          const newKey = `${ITEM_KEYS[r]}_${WEEK_DAYS[d]}`;
-          const oldKey = `r${r}_d${d}`;
-          // 優先讀取中文 Key，若無則讀取舊版相容 Key
-          arr[r][d] = obj[newKey] !== undefined ? obj[newKey] : (obj[oldKey] || "");
-        }
-      }
-      return arr;
     }
 
     async function syncToDatabase() {
@@ -600,8 +572,16 @@
       if (cloudDb) {
         try {
           const docId = `${activeMember}_${targetWeek}`;
+          const flatObj = {};
+          for (let r = 0; r < 6; r++) {
+            for (let d = 0; d < 7; d++) {
+              const label = `${CHINESE_ITEMS[r]}_${WEEK_DAYS[d]}`;
+              flatObj[label] = (reportState.t && reportState.t[r] && reportState.t[r][d]) || "";
+            }
+          }
+
           const payload = {
-            t_flat: serializeGrid(reportState.t),
+            t_flat: flatObj,
             dateStart: reportState.dateStart || "",
             dateEnd: reportState.dateEnd || "",
             stats: reportState.stats || {},
@@ -644,8 +624,19 @@
           const snapshot = await cloudDb.collection("weekly_reports").doc(docId).get();
           if (snapshot.exists) {
             const rawData = snapshot.data().data;
+            const flat = rawData.t_flat || {};
+            const restoredGrid = Array.from({ length: 6 }, () => Array(7).fill(""));
+
+            for (let r = 0; r < 6; r++) {
+              for (let d = 0; d < 7; d++) {
+                const chineseKey = `${CHINESE_ITEMS[r]}_${WEEK_DAYS[d]}`;
+                const legacyKey = `r${r}_d${d}`;
+                restoredGrid[r][d] = flat[chineseKey] !== undefined ? flat[chineseKey] : (flat[legacyKey] || "");
+              }
+            }
+
             reportState = {
-              t: deserializeGrid(rawData.t_flat),
+              t: restoredGrid,
               dateStart: rawData.dateStart || "",
               dateEnd: rawData.dateEnd || "",
               stats: rawData.stats || {},
@@ -672,18 +663,20 @@
             stats: {},
             notes: {}
           };
-          updateSyncIndicator('本週全新表單');
+          updateSyncIndicator('全新表單');
         }
       }
 
-      // 填回畫面各欄位
+      // 填回表單元素
       document.querySelectorAll('.input-t').forEach(el => {
         const r = el.dataset.row;
         const d = el.dataset.day;
         el.value = (reportState.t && reportState.t[r] && reportState.t[r][d]) || "";
       });
-      document.getElementById('date-start').value = reportState.dateStart || "";
-      document.getElementById('date-end').value = reportState.dateEnd || "";
+      const dStart = document.getElementById('date-start');
+      if (dStart) dStart.value = reportState.dateStart || "";
+      const dEnd = document.getElementById('date-end');
+      if (dEnd) dEnd.value = reportState.dateEnd || "";
 
       ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(k => {
         const f = document.getElementById(`stat-${k}`);
@@ -701,60 +694,69 @@
       recalculateScores();
     }
 
-    // 6. 互動與按鍵綁定
+    // 8. 事件監聽綁定
     function attachListeners() {
-      document.getElementById('table-body').addEventListener('input', (e) => {
-        if (e.target.classList.contains('input-t')) {
-          const r = e.target.dataset.row;
-          const d = e.target.dataset.day;
-          reportState.t[r][d] = e.target.value;
-          recalculateScores();
-          queueSync();
-        }
-      });
+      const tbody = document.getElementById('table-body');
+      if (tbody) {
+        tbody.addEventListener('input', (e) => {
+          if (e.target.classList.contains('input-t')) {
+            const r = e.target.dataset.row;
+            const d = e.target.dataset.day;
+            reportState.t[r][d] = e.target.value;
+            recalculateScores();
+            queueSync();
+          }
+        });
+      }
 
-      document.getElementById('day-cards-wrapper').addEventListener('click', (e) => {
-        const btn = e.target.closest('.btn-step');
-        if (btn) {
-          const r = btn.dataset.row;
-          const delta = parseInt(btn.dataset.delta, 10);
-          let val = parseInt(reportState.t[r][selectedDay], 10) || 0;
-          val = Math.max(0, val + delta);
-          reportState.t[r][selectedDay] = val > 0 ? val : "";
+      const cardsWrap = document.getElementById('day-cards-wrapper');
+      if (cardsWrap) {
+        cardsWrap.addEventListener('click', (e) => {
+          const btn = e.target.closest('.btn-step');
+          if (btn) {
+            const r = btn.dataset.row;
+            const delta = parseInt(btn.dataset.delta, 10);
+            let val = parseInt(reportState.t[r][selectedDay], 10) || 0;
+            val = Math.max(0, val + delta);
+            reportState.t[r][selectedDay] = val > 0 ? val : "";
 
-          const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
-          if (deskInp) deskInp.value = reportState.t[r][selectedDay];
-          const mobInp = document.querySelector(`.input-t-mobile[data-row="${r}"]`);
-          if (mobInp) mobInp.value = reportState.t[r][selectedDay];
+            const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
+            if (deskInp) deskInp.value = reportState.t[r][selectedDay];
+            const mobInp = document.querySelector(`.input-t-mobile[data-row="${r}"]`);
+            if (mobInp) mobInp.value = reportState.t[r][selectedDay];
 
-          recalculateScores();
-          queueSync();
-        }
-      });
+            recalculateScores();
+            queueSync();
+          }
+        });
 
-      document.getElementById('day-cards-wrapper').addEventListener('input', (e) => {
-        if (e.target.classList.contains('input-t-mobile')) {
-          const r = e.target.dataset.row;
-          reportState.t[r][selectedDay] = e.target.value;
-          const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
-          if (deskInp) deskInp.value = e.target.value;
-          recalculateScores();
-          queueSync();
-        }
-      });
+        cardsWrap.addEventListener('input', (e) => {
+          if (e.target.classList.contains('input-t-mobile')) {
+            const r = e.target.dataset.row;
+            reportState.t[r][selectedDay] = e.target.value;
+            const deskInp = document.querySelector(`.input-t[data-row="${r}"][data-day="${selectedDay}"]`);
+            if (deskInp) deskInp.value = e.target.value;
+            recalculateScores();
+            queueSync();
+          }
+        });
+      }
 
-      document.getElementById('day-tabs').addEventListener('click', (e) => {
-        const tab = e.target.closest('.day-tab-btn');
-        if (tab) {
-          selectedDay = parseInt(tab.dataset.day, 10);
-          document.querySelectorAll('.day-tab-btn').forEach((b, i) => {
-            b.className = i === selectedDay
-              ? 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-blue-600 text-white border-blue-600'
-              : 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-white text-slate-600 border-slate-200';
-          });
-          renderDayCards();
-        }
-      });
+      const tabsBox = document.getElementById('day-tabs');
+      if (tabsBox) {
+        tabsBox.addEventListener('click', (e) => {
+          const tab = e.target.closest('.day-tab-btn');
+          if (tab) {
+            selectedDay = parseInt(tab.dataset.day, 10);
+            document.querySelectorAll('.day-tab-btn').forEach((b, i) => {
+              b.className = i === selectedDay
+                ? 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-blue-600 text-white border-blue-600'
+                : 'day-tab-btn flex-1 py-1.5 px-2 text-xs font-bold rounded-lg border transition whitespace-nowrap bg-white text-slate-600 border-slate-200';
+            });
+            renderDayCards();
+          }
+        });
+      }
 
       const handleMemberAction = () => {
         const inputVal = document.getElementById('member-id-input').value.trim();
@@ -766,71 +768,93 @@
         }
       };
 
-      document.getElementById('btn-switch-member').addEventListener('click', handleMemberAction);
-      document.getElementById('member-id-input').addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') handleMemberAction();
-      });
+      const btnSwitch = document.getElementById('btn-switch-member');
+      if (btnSwitch) btnSwitch.addEventListener('click', handleMemberAction);
 
-      document.getElementById('btn-toggle-view').addEventListener('click', () => {
-        const focusCard = document.getElementById('mobile-focus-section');
-        const matrixTable = document.getElementById('desktop-table-wrapper');
-        const viewText = document.getElementById('toggle-view-text');
-        if (focusCard.classList.contains('hidden')) {
-          focusCard.classList.remove('hidden');
-          matrixTable.classList.add('hidden');
-          viewText.textContent = '📊 全週大表';
-        } else {
-          focusCard.classList.add('hidden');
-          matrixTable.classList.remove('hidden');
-          viewText.textContent = '📱 每日卡片';
+      const memberInp = document.getElementById('member-id-input');
+      if (memberInp) {
+        memberInp.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') handleMemberAction();
+        });
+      }
+
+      const btnToggle = document.getElementById('btn-toggle-view');
+      if (btnToggle) {
+        btnToggle.addEventListener('click', () => {
+          const focusCard = document.getElementById('mobile-focus-section');
+          const matrixTable = document.getElementById('desktop-table-wrapper');
+          const viewText = document.getElementById('toggle-view-text');
+          if (focusCard && matrixTable) {
+            if (focusCard.classList.contains('hidden')) {
+              focusCard.classList.remove('hidden');
+              matrixTable.classList.add('hidden');
+              if (viewText) viewText.textContent = '📊 全週大表';
+            } else {
+              focusCard.classList.add('hidden');
+              matrixTable.classList.remove('hidden');
+              if (viewText) viewText.textContent = '📱 每日卡片';
+            }
+          }
+        });
+      }
+
+      ['date-start', 'date-end'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          el.addEventListener('input', (e) => {
+            if (id === 'date-start') reportState.dateStart = e.target.value;
+            if (id === 'date-end') reportState.dateEnd = e.target.value;
+            queueSync();
+          });
         }
       });
 
-      ['date-start', 'date-end'].forEach(id => {
-        document.getElementById(id).addEventListener('input', (e) => {
-          if (id === 'date-start') reportState.dateStart = e.target.value;
-          if (id === 'date-end') reportState.dateEnd = e.target.value;
-          queueSync();
-        });
-      });
-
       ['leads', 'proposals', 'closes', 'trainees', 'interviews', 'recruits'].forEach(k => {
-        document.getElementById(`stat-${k}`).addEventListener('input', (e) => {
-          reportState.stats[k] = e.target.value;
-          queueSync();
-        });
+        const el = document.getElementById(`stat-${k}`);
+        if (el) {
+          el.addEventListener('input', (e) => {
+            reportState.stats[k] = e.target.value;
+            queueSync();
+          });
+        }
       });
 
       for (let i = 0; i < 2; i++) {
         ['prop', 'dev', 'event', 'todo'].forEach(sec => {
-          document.getElementById(`notes-${sec}-${i}`).addEventListener('input', (e) => {
-            reportState.notes[`${sec}-${i}`] = e.target.value;
-            queueSync();
-          });
+          const el = document.getElementById(`notes-${sec}-${i}`);
+          if (el) {
+            el.addEventListener('input', (e) => {
+              reportState.notes[`${sec}-${i}`] = e.target.value;
+              queueSync();
+            });
+          }
         });
       }
 
-      document.getElementById('btn-clear').addEventListener('click', () => {
-        if (confirm(`確定要清空【${activeMember || '當前紀錄'}】本週的所有輸入數據嗎？`)) {
-          reportState = {
-            t: Array.from({ length: 6 }, () => Array(7).fill("")),
-            dateStart: "",
-            dateEnd: "",
-            stats: {},
-            notes: {}
-          };
-          syncToDatabase();
-          retrieveData();
-        }
-      });
+      const btnClear = document.getElementById('btn-clear');
+      if (btnClear) {
+        btnClear.addEventListener('click', () => {
+          if (confirm(`確定要清空【${activeMember || '當前紀錄'}】${targetWeek} 的所有輸入數據嗎？`)) {
+            reportState = {
+              t: Array.from({ length: 6 }, () => Array(7).fill("")),
+              dateStart: "",
+              dateEnd: "",
+              stats: {},
+              notes: {}
+            };
+            syncToDatabase();
+            retrieveData();
+          }
+        });
+      }
     }
 
-    // 啟動入口
-setupWeekDropdown(); // 👈 確保最先載入生成週次選項
-setupInterface();
-if (activeMember) {
-  retrieveData();
-}
+    // 9. 啟動入口
+    setupWeekDropdown();
+    setupInterface();
+    if (activeMember) {
+      retrieveData();
+    }
   </script>
 </body>
 </html>
