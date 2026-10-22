@@ -92,21 +92,31 @@
 </head>
 <body class="bg-slate-100 min-h-screen text-slate-800 antialiased pb-12">
 
-  <!-- 頂部控制面板 -->
+<!-- 頂部控制面板 -->
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm no-print">
     <div class="max-w-5xl mx-auto px-3 py-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
       
-      <!-- 成員選擇與狀態 -->
-      <div class="flex items-center justify-between gap-2">
-        <div class="flex items-center gap-1.5 flex-1 sm:flex-initial">
+      <!-- 成員選擇、週次選擇與狀態 -->
+      <div class="flex flex-wrap items-center gap-2">
+        <!-- 成員輸入 -->
+        <div class="flex items-center gap-1">
           <label class="text-xs font-bold text-slate-500 whitespace-nowrap">成員</label>
-          <input type="text" id="member-id-input" placeholder="請輸入姓名/代號" class="flex-1 sm:w-36 px-2.5 py-1.5 text-sm font-semibold border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
-          <button id="btn-switch-member" type="button" class="px-4 py-1.5 text-xs bg-slate-800 active:bg-slate-950 text-white font-bold rounded shadow-sm cursor-pointer select-none">
+          <input type="text" id="member-id-input" placeholder="姓名" class="w-24 sm:w-28 px-2 py-1 text-xs sm:text-sm font-semibold border border-slate-300 rounded focus:ring-2 focus:ring-blue-500 focus:outline-none">
+          <button id="btn-switch-member" type="button" class="px-2.5 py-1 text-xs bg-slate-800 active:bg-slate-950 text-white font-bold rounded shadow-sm cursor-pointer select-none">
             載入
           </button>
         </div>
 
-        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium bg-slate-50 border border-slate-200 shrink-0" id="sync-badge">
+        <!-- 週次下拉選單 -->
+        <div class="flex items-center gap-1">
+          <label class="text-xs font-bold text-slate-500 whitespace-nowrap">週次</label>
+          <select id="week-select" class="px-2 py-1 text-xs sm:text-sm font-semibold border border-slate-300 rounded bg-white text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none">
+            <!-- JS 動態生成歷史週次 -->
+          </select>
+        </div>
+
+        <!-- 狀態徽章 -->
+        <div class="flex items-center gap-1.5 px-2 py-1 rounded-full text-xs font-medium bg-slate-50 border border-slate-200 shrink-0" id="sync-badge">
           <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
           <span id="sync-status" class="text-slate-600 text-[11px]">雲端就緒</span>
         </div>
@@ -114,16 +124,17 @@
 
       <!-- 右側按鈕組 -->
       <div class="flex items-center justify-end gap-2 shrink-0">
-        <button id="btn-toggle-view" type="button" class="md:hidden flex-1 sm:flex-initial py-1.5 px-2.5 text-xs font-semibold rounded border border-blue-200 bg-blue-50 text-blue-700 active:bg-blue-100">
+        <button id="btn-toggle-view" type="button" class="md:hidden flex-1 sm:flex-initial py-1 px-2.5 text-xs font-semibold rounded border border-blue-200 bg-blue-50 text-blue-700 active:bg-blue-100">
           <span id="toggle-view-text">📊 全週大表</span>
         </button>
 
-        <button id="btn-print" type="button" class="flex items-center justify-center gap-1 px-3 py-1.5 text-xs font-semibold rounded bg-indigo-600 active:bg-indigo-700 text-white shadow-sm">
+        <!-- 列印按鈕（直接掛載原生列印指令，確保 100% 觸發） -->
+        <button id="btn-print" type="button" onclick="window.print()" class="flex items-center justify-center gap-1 px-3 py-1 text-xs font-semibold rounded bg-indigo-600 active:bg-indigo-700 text-white shadow-sm cursor-pointer">
           <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path></svg>
           列印
         </button>
 
-        <button id="btn-clear" type="button" class="px-2.5 py-1.5 text-xs font-semibold rounded border border-red-200 text-red-600 active:bg-red-50">
+        <button id="btn-clear" type="button" class="px-2 py-1 text-xs font-semibold rounded border border-red-200 text-red-600 active:bg-red-50">
           一鍵清零
         </button>
       </div>
@@ -325,18 +336,56 @@
     ];
     const WEEK_DAYS = ['週一', '週二', '週三', '週四', '週五', '週六', '週日'];
 
-    function fetchCurrentWeek() {
-      const now = new Date();
-      now.setHours(0, 0, 0, 0);
-      now.setDate(now.getDate() + 3 - (now.getDay() + 6) % 7);
-      const jan4 = new Date(now.getFullYear(), 0, 4);
-      const diff = (now.getTime() - jan4.getTime()) / 86400000;
+    // 取得指定日期對應的 ISO 週次
+    function getISOWeekString(date) {
+      const d = new Date(date.getTime());
+      d.setHours(0, 0, 0, 0);
+      d.setDate(d.getDate() + 3 - (d.getDay() + 6) % 7);
+      const jan4 = new Date(d.getFullYear(), 0, 4);
+      const diff = (d.getTime() - jan4.getTime()) / 86400000;
       const weekNum = 1 + Math.round((diff - 3 + (jan4.getDay() + 6) % 7) / 7);
-      return `${now.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
+      return `${d.getFullYear()}-W${String(weekNum).padStart(2, '0')}`;
     }
 
-    const targetWeek = fetchCurrentWeek();
-    document.getElementById('week-display').textContent = targetWeek;
+    // 當前實際週次
+    const currentRealWeek = getISOWeekString(new Date());
+    // 目標週次（可自由切換，預設為本週）
+    let targetWeek = currentRealWeek;
+
+    // 初始化週次選單（包含本週、前 7 週、下 1 週）
+    function setupWeekDropdown() {
+      const select = document.getElementById('week-select');
+      if (!select) return;
+      select.innerHTML = '';
+      
+      const today = new Date();
+      for (let i = 1; i >= -7; i--) {
+        const d = new Date(today.getTime() + i * 7 * 86400000);
+        const wStr = getISOWeekString(d);
+        const opt = document.createElement('option');
+        opt.value = wStr;
+        if (wStr === currentRealWeek) {
+          opt.textContent = `${wStr} (本週)`;
+          opt.selected = true;
+        } else if (i === 1) {
+          opt.textContent = `${wStr} (下週)`;
+        } else {
+          opt.textContent = `${wStr} (過去第 ${Math.abs(i)} 週)`;
+        }
+        select.appendChild(opt);
+      }
+
+      const displayElem = document.getElementById('week-display');
+      if (displayElem) displayElem.textContent = targetWeek;
+
+      select.addEventListener('change', (e) => {
+        targetWeek = e.target.value;
+        if (displayElem) displayElem.textContent = targetWeek;
+        if (activeMember) {
+          retrieveData();
+        }
+      });
+    }
 
     // 預設為空白，讓使用者自行輸入
     let activeMember = localStorage.getItem('score_tracker_member') || '';
