@@ -749,7 +749,6 @@
         });
       }
 
-      document.getElementById('btn-print').addEventListener('click', () => window.print());
       document.getElementById('btn-clear').addEventListener('click', () => {
         if (confirm(`確定要清空【${activeMember || '當前紀錄'}】本週的所有輸入數據嗎？`)) {
           reportState = {
@@ -766,10 +765,11 @@
     }
 
     // 啟動入口
-    setupInterface();
-    if (activeMember) {
-      retrieveData();
-    }
+setupWeekDropdown(); // 👈 確保最先載入生成週次選項
+setupInterface();
+if (activeMember) {
+  retrieveData();
+}
   </script>
 </body>
 </html>
